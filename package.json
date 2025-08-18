@@ -1,0 +1,62 @@
+{
+  "name": "nekara-jobs",
+  "version": "1.0.0",
+  "description": "네카라쿠배 채용정보 실시간 집계 사이트",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "server": "node server/index.js",
+    "crawler": "node crawler/index.js",
+    "setup": "bash scripts/setup.sh",
+    "deploy": "bash scripts/deploy.sh",
+    "db:migrate": "npx prisma migrate dev",
+    "db:generate": "npx prisma generate",
+    "db:reset": "npx prisma migrate reset",
+    "db:seed": "npx prisma db seed",
+    "db:studio": "npx prisma studio",
+    "db:verify": "node scripts/verify-db.js",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "typescript": "^5.0.0",
+    "@types/react": "^18.0.0",
+    "@types/node": "^20.0.0",
+    "tailwindcss": "^3.0.0",
+    "autoprefixer": "^10.0.0",
+    "postcss": "^8.0.0",
+    "express": "^4.18.0",
+    "cors": "^2.8.5",
+    "ws": "^8.14.0",
+    "puppeteer": "^21.0.0",
+    "prisma": "^5.0.0",
+    "@prisma/client": "^5.0.0",
+    "node-cron": "^3.0.0",
+    "axios": "^1.5.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^14.0.0",
+    "@types/express": "^4.17.0",
+    "@types/cors": "^2.8.0",
+    "@types/ws": "^8.5.0",
+    "husky": "^8.0.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.0.0",
+    "ts-node": "^10.9.0"
+  },
+  "keywords": ["채용", "네이버", "카카오", "라인", "쿠팡", "배달의민족"],
+  "author": "",
+  "license": "ISC",
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+  }
+}

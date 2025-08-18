@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  nameEn    String?
+  logo      String?
+  website   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  jobs      Job[]
+
+  @@map("companies")
+}
+
+model Job {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  location    String?
+  experience  String?
+  salary      String?
+  jobType     String?  // 정규직, 계약직, 인턴 등
+  department  String?
+  deadline    DateTime?
+  postedAt    DateTime
+  updatedAt   DateTime @updatedAt
+  isActive    Boolean  @default(true)
+  originalUrl String   @unique
+  
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  
+  tags        JobTag[]
+  views       JobView[]
+
+  @@index([companyId])
+  @@index([postedAt])
+  @@index([isActive])
+  @@index([title])
+  @@map("jobs")
+}
+
+model Tag {
+  id    String   @id @default(cuid())
+  name  String   @unique
+  jobs  JobTag[]
+
+  @@map("tags")
+}
+
+model JobTag {
+  jobId String
+  tagId String
+  job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  tag   Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([jobId, tagId])
+  @@map("job_tags")
+}
+
+// 크롤링 로그 테이블
+model CrawlLog {
+  id        String   @id @default(cuid())
+  company   String
+  status    String   // success, failed, partial
+  startTime DateTime
+  endTime   DateTime?
+  jobCount  Int?
+  errorMsg  String?
+  createdAt DateTime @default(now())
+
+  @@index([company])
+  @@index([createdAt])
+  @@map("crawl_logs")
+}
+
+// 사용자 알림 테이블
+model UserAlert {
+  id        String   @id @default(cuid())
+  email     String
+  keywords  String[] // 관심 키워드
+  companies String[] // 관심 회사
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@map("user_alerts")
+}
+
+// 채용공고 조회 통계
+model JobView {
+  id        String   @id @default(cuid())
+  jobId     String
+  ipAddress String
+  userAgent String?
+  viewedAt  DateTime @default(now())
+  
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([viewedAt])
+  @@map("job_views")
+}
