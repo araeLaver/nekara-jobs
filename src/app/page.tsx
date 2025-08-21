@@ -14,6 +14,7 @@ interface Job {
   department: string
   jobType: string
   postedAt: string
+  deadline?: string
   originalUrl: string
   company: {
     id: string
@@ -52,8 +53,8 @@ export default function Home() {
         ...Object.fromEntries(Object.entries(filters).filter(([_, v]) => v))
       })
 
-      console.log('API 요청:', `http://localhost:3001/api/jobs?${queryParams}`)
-      const response = await fetch(`http://localhost:3001/api/jobs?${queryParams}`)
+      console.log('API 요청:', `/api/jobs?${queryParams}`)
+      const response = await fetch(`/api/jobs?${queryParams}`)
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -76,7 +77,7 @@ export default function Home() {
   const fetchStats = async () => {
     try {
       console.log('통계 API 요청')
-      const response = await fetch('http://localhost:3001/api/stats')
+      const response = await fetch('/api/stats')
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)

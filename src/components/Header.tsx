@@ -22,54 +22,17 @@ export default function Header() {
             </h1>
           </div>
 
-          {/* 데스크톱 네비게이션 */}
-          <nav className="hidden md:flex items-center space-x-4 lg:space-x-8">
-            <a href="#" className="text-gray-700 hover:text-gray-900 font-medium responsive-text">
+          {/* 네비게이션 */}
+          <nav className="flex items-center space-x-6">
+            <a href="/" className="text-gray-700 hover:text-gray-900 font-medium">
               채용공고
             </a>
-            <a href="#" className="text-gray-700 hover:text-gray-900 font-medium responsive-text">
-              기업정보
+            <a href="/community" className="text-gray-700 hover:text-gray-900 font-medium">
+              커뮤니티
             </a>
-            <a href="#" className="text-gray-700 hover:text-gray-900 font-medium responsive-text">
-              통계
-            </a>
-            <button className="bg-blue-600 text-white px-3 lg:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm lg:text-base">
-              알림 설정
-            </button>
           </nav>
-
-          {/* 모바일 메뉴 버튼 */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-700 hover:text-gray-900"
-            >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          </div>
         </div>
 
-        {/* 모바일 메뉴 */}
-        {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200">
-            <div className="space-y-2">
-              <a href="#" className="block text-gray-700 hover:text-gray-900 font-medium py-2">
-                채용공고
-              </a>
-              <a href="#" className="block text-gray-700 hover:text-gray-900 font-medium py-2">
-                기업정보
-              </a>
-              <a href="#" className="block text-gray-700 hover:text-gray-900 font-medium py-2">
-                통계
-              </a>
-              <button className="w-full text-left bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                알림 설정
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </header>
   )

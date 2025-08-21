@@ -110,3 +110,137 @@ model JobView {
   @@index([viewedAt])
   @@map("job_views")
 }
+
+// 사용자 모델
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  email     String?  @unique
+  nickname  String
+  avatar    String?
+  isOnline  Boolean  @default(false)
+  lastSeen  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // 채팅 관련 관계
+  sentMessages     Message[]       @relation("MessageSender")
+  chatRoomMembers  ChatRoomMember[]
+  createdRooms     ChatRoom[]      @relation("RoomCreator")
+  
+  // 커뮤니티 관련 관계
+  posts            CommunityPost[]
+  comments         CommunityComment[]
+  
+  @@map("users")
+}
+
+// 채팅방 모델
+model ChatRoom {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  type        String   // 'private', 'group', 'open'
+  isActive    Boolean  @default(true)
+  maxMembers  Int?     // null이면 무제한
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  creatorId   String
+  creator     User     @relation("RoomCreator", fields: [creatorId], references: [id])
+  
+  // 관계
+  members     ChatRoomMember[]
+  messages    Message[]
+  
+  @@index([type])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("chat_rooms")
+}
+
+// 채팅방 멤버
+model ChatRoomMember {
+  id         String   @id @default(cuid())
+  userId     String
+  chatRoomId String
+  role       String   @default("member") // 'admin', 'moderator', 'member'
+  joinedAt   DateTime @default(now())
+  lastRead   DateTime @default(now())
+  isActive   Boolean  @default(true)
+  
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, chatRoomId])
+  @@index([chatRoomId])
+  @@index([userId])
+  @@map("chat_room_members")
+}
+
+// 메시지 모델
+model Message {
+  id         String   @id @default(cuid())
+  content    String
+  type       String   @default("text") // 'text', 'image', 'file', 'system'
+  chatRoomId String
+  senderId   String
+  isEdited   Boolean  @default(false)
+  editedAt   DateTime?
+  createdAt  DateTime @default(now())
+  
+  chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  sender     User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  @@index([chatRoomId])
+  @@index([createdAt])
+  @@index([senderId])
+  @@map("messages")
+}
+
+// 커뮤니티 게시글
+model CommunityPost {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  authorId  String
+  category  String   // 'general', 'job_discussion', 'company_review', 'career_advice'
+  tags      String[] // 태그 배열
+  likes     Int      @default(0)
+  views     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  author    User              @relation(fields: [authorId], references: [id])
+  comments  CommunityComment[]
+  
+  @@index([category])
+  @@index([createdAt])
+  @@index([authorId])
+  @@map("community_posts")
+}
+
+// 커뮤니티 댓글
+model CommunityComment {
+  id        String   @id @default(cuid())
+  content   String
+  authorId  String
+  postId    String
+  parentId  String?  // 대댓글을 위한 자기참조
+  likes     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  author    User              @relation(fields: [authorId], references: [id])
+  post      CommunityPost     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent    CommunityComment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   CommunityComment[] @relation("CommentReplies")
+  
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+  @@index([createdAt])
+  @@map("community_comments")
+}

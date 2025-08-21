@@ -7,11 +7,15 @@ interface Job {
   location: string
   department: string
   jobType: string
+  experience: string
   postedAt: string
+  deadline?: string
+  isActive: boolean
   originalUrl: string
   company: {
     id: string
     name: string
+    nameEn: string
     logo?: string
   }
   tags: string[]
@@ -38,6 +42,35 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
     return date.toLocaleDateString('ko-KR')
   }
 
+  const formatDeadline = (deadlineString?: string) => {
+    if (!deadlineString) return null
+    
+    const deadline = new Date(deadlineString)
+    const now = new Date()
+    const diffTime = deadline.getTime() - now.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays < 0) return '마감'
+    if (diffDays === 0) return 'D-Day'
+    if (diffDays <= 7) return `D-${diffDays}`
+    return deadline.toLocaleDateString('ko-KR')
+  }
+
+  const getDeadlineColor = (deadlineString?: string) => {
+    if (!deadlineString) return 'text-gray-500'
+    
+    const deadline = new Date(deadlineString)
+    const now = new Date()
+    const diffTime = deadline.getTime() - now.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays < 0) return 'text-gray-400'
+    if (diffDays <= 3) return 'text-red-600'
+    if (diffDays <= 7) return 'text-orange-600'
+    return 'text-green-600'
+  }
+
+
   const getCompanyDisplayName = (companyName: string) => {
     const nameMap: { [key: string]: string } = {
       naver: '네이버',
@@ -50,27 +83,8 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
   }
 
   const handleJobClick = (job: Job) => {
-    // 샘플 URL인 경우 실제 채용 사이트로 리다이렉트
-    if (job.originalUrl.includes('/sample/')) {
-      const realUrls: { [key: string]: string } = {
-        naver: 'https://recruit.navercorp.com/naver/job/list/developer',
-        kakao: 'https://careers.kakao.com/jobs',
-        line: 'https://careers.linecorp.com/ko/jobs',
-        coupang: 'https://www.coupang.jobs/kr/',
-        baemin: 'https://www.woowahan.com/jobs'
-      }
-      
-      const realUrl = realUrls[job.company.name]
-      if (realUrl) {
-        if (confirm(`샘플 데이터입니다. ${getCompanyDisplayName(job.company.name)} 채용 사이트로 이동하시겠습니까?`)) {
-          window.open(realUrl, '_blank')
-        }
-      } else {
-        alert('샘플 데이터입니다. 실제 채용공고가 아닙니다.')
-      }
-    } else {
-      window.open(job.originalUrl, '_blank')
-    }
+    // 내 사이트 상세페이지로 이동
+    window.location.href = `/jobs/${job.id}`
   }
 
   if (loading) {
@@ -128,9 +142,11 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
           >
             <div className="flex justify-between items-start mb-3 sm:mb-4">
               <div className="flex-1 pr-2">
-                <h3 className="responsive-subtitle font-semibold text-gray-900 mb-2 hover:text-blue-600 line-clamp-2">
-                  {job.title}
-                </h3>
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="responsive-subtitle font-semibold text-gray-900 hover:text-blue-600 line-clamp-2">
+                    {job.title}
+                  </h3>
+                </div>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                   <span className={`company-badge ${job.company.name.toLowerCase()}`}>
                     {getCompanyDisplayName(job.company.name)}
@@ -152,17 +168,22 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
                       {job.location}
                     </span>
                   )}
-                  {job.jobType && (
-                    <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
-                      {job.jobType}
+                  {job.experience && (
+                    <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+                      {job.experience}
                     </span>
                   )}
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 mb-1">
                   {formatDate(job.postedAt)}
                 </p>
+                {job.deadline && (
+                  <p className={`text-sm font-medium mb-1 ${getDeadlineColor(job.deadline)}`}>
+                    {formatDeadline(job.deadline)}
+                  </p>
+                )}
                 <svg className="w-5 h-5 text-gray-400 mt-1 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
