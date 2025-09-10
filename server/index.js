@@ -259,7 +259,7 @@ async function saveJobsToDatabase(jobs, companyName) {
 }
 
 // 서버 시작
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 4001;
 server.listen(PORT, () => {
   console.log(`🚀 서버가 포트 ${PORT}에서 실행 중입니다.`);
   console.log(`📡 WebSocket 서버 실행 중: ws://localhost:${PORT}/ws`);

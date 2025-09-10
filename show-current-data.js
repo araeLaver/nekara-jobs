@@ -1,6 +1,6 @@
 // 현재 데이터 확인
 
-fetch('http://localhost:3001/api/jobs')
+fetch('http://localhost:4001/api/jobs')
   .then(res => res.json())
   .then(data => {
     console.log('='.repeat(60));

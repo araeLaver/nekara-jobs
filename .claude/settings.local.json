@@ -16,7 +16,11 @@
       "Bash(git branch:*)",
       "Bash(git push:*)",
       "Bash(npx prisma:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(git commit:*)",
+      "Bash(git pull:*)",
+      "WebSearch",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": [],

@@ -4,7 +4,7 @@ async function runFinalTest() {
   console.log('🧪 네카라쿠배 채용 사이트 최종 테스트 시작')
   console.log('=' .repeat(60))
 
-  const baseURL = 'http://localhost:3001'
+  const baseURL = 'http://localhost:4001'
   const tests = []
 
   // 1. API 서버 상태 테스트

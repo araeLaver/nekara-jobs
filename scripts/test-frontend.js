@@ -3,7 +3,7 @@
 async function testFrontendAPI() {
   console.log('🧪 프론트엔드 API 연결 테스트 시작...')
 
-  const baseURL = 'http://localhost:3001'
+  const baseURL = 'http://localhost:4001'
   
   try {
     // 1. API 서버 상태 확인

@@ -12,7 +12,7 @@ class WebSocketManager {
 
   connect() {
     try {
-      this.ws = new WebSocket('ws://localhost:3001/ws')
+      this.ws = new WebSocket('ws://localhost:4001/ws')
       
       this.ws.onopen = () => {
         console.log('WebSocket 연결됨')

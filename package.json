@@ -4,7 +4,7 @@
   "description": "네카라쿠배 채용정보 실시간 집계 사이트",
   "main": "index.js",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 4000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

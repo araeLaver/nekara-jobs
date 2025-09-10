@@ -83,8 +83,41 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
   }
 
   const handleJobClick = (job: Job) => {
-    // 내 사이트 상세페이지로 이동
+    // 상세 페이지로 이동
     window.location.href = `/jobs/${job.id}`
+  }
+
+  const handleApplyClick = (e: React.MouseEvent, job: Job) => {
+    e.stopPropagation() // 카드 클릭 이벤트와 분리
+    
+    // 실제 채용 사이트 URL로 직접 이동
+    if (job.originalUrl && job.originalUrl !== '#') {
+      const companyDisplayName = getCompanyDisplayName(job.company.name)
+      
+      // 확인 메시지를 통해 사용자가 실제 채용 페이지로 이동할 것임을 알림
+      if (confirm(`${companyDisplayName} 채용 페이지로 이동하시겠습니까?\n\n"${job.title}" 공고를 확인할 수 있습니다.`)) {
+        window.open(job.originalUrl, '_blank')
+      }
+    } else {
+      // 폴백: 회사별 기본 채용 사이트로 이동
+      const fallbackUrls: { [key: string]: string } = {
+        naver: 'https://recruit.navercorp.com/naver/job/list/developer',
+        kakao: 'https://careers.kakao.com/jobs',
+        line: 'https://careers.linecorp.com/ko/jobs',
+        coupang: 'https://www.coupang.jobs/kr/',
+        baemin: 'https://www.woowahan.com/jobs'
+      }
+      
+      const fallbackUrl = fallbackUrls[job.company.name]
+      if (fallbackUrl) {
+        const companyDisplayName = getCompanyDisplayName(job.company.name)
+        if (confirm(`${companyDisplayName} 채용 사이트로 이동하시겠습니까?`)) {
+          window.open(fallbackUrl, '_blank')
+        }
+      } else {
+        alert('채용 페이지 정보를 찾을 수 없습니다.')
+      }
+    }
   }
 
   if (loading) {
@@ -175,18 +208,16 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
                   )}
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-500 mb-1">
+              <div className="text-right flex flex-col items-end">
+                <p className="text-sm text-gray-500 mb-2">
                   {formatDate(job.postedAt)}
                 </p>
-                {job.deadline && (
-                  <p className={`text-sm font-medium mb-1 ${getDeadlineColor(job.deadline)}`}>
-                    {formatDeadline(job.deadline)}
-                  </p>
-                )}
-                <svg className="w-5 h-5 text-gray-400 mt-1 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
+                <button
+                  onClick={(e) => handleApplyClick(e, job)}
+                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
+                >
+                  지원하기
+                </button>
               </div>
             </div>
 
