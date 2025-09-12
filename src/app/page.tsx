@@ -98,9 +98,15 @@ export default function Home() {
   }
 
   useEffect(() => {
-    fetchJobs()
+    console.log('컴포넌트 마운트됨 - API 호출 시작')
     fetchStats()
-  }, [filters])
+    fetchJobs(1)
+  }, [])
+
+  useEffect(() => {
+    console.log('필터 변경됨:', filters)
+    fetchJobs(1)
+  }, [filters.company, filters.location, filters.jobType, filters.search])
 
   const handleFilterChange = (newFilters: typeof filters) => {
     setFilters(newFilters)

@@ -20,7 +20,10 @@
       "Bash(git commit:*)",
       "Bash(git pull:*)",
       "WebSearch",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(pg_isready:*)",
+      "Bash(findstr:*)",
+      "Bash(netstat:*)"
     ],
     "deny": [],
     "ask": [],

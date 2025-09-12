@@ -77,7 +77,13 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
       kakao: '카카오',
       line: '라인',
       coupang: '쿠팡',
-      baemin: '배달의민족'
+      baemin: '배달의민족',
+      carrot: '당근',
+      nexon: '넥슨',
+      krafton: '크래프톤',
+      toss: '토스',
+      bucketplace: '오늘의집',
+      zigbang: '직방'
     }
     return nameMap[companyName] || companyName
   }
@@ -221,11 +227,6 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
               </div>
             </div>
 
-            {job.description && (
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                {job.description}
-              </p>
-            )}
 
             {job.tags && job.tags.length > 0 && (
               <div className="flex flex-wrap gap-2">

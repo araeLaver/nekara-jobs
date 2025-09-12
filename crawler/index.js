@@ -3,6 +3,12 @@ const { crawlKakao } = require('./kakao');
 const { crawlLine } = require('./line');
 const { crawlCoupang } = require('./coupang');
 const { crawlBaemin } = require('./baemin');
+const { crawlToss } = require('./toss');
+const { crawlCarrot } = require('./carrot');
+const { crawlNexon } = require('./nexon');
+const { crawlKrafton } = require('./krafton');
+const crawlBucketplace = require('./bucketplace');
+const crawlZigbang = require('./zigbang');
 const cron = require('node-cron');
 
 class JobCrawler {
@@ -12,7 +18,13 @@ class JobCrawler {
       { name: 'kakao', fn: crawlKakao },
       { name: 'line', fn: crawlLine },
       { name: 'coupang', fn: crawlCoupang },
-      { name: 'baemin', fn: crawlBaemin }
+      { name: 'baemin', fn: crawlBaemin },
+      { name: 'toss', fn: crawlToss },
+      { name: 'carrot', fn: crawlCarrot },
+      { name: 'nexon', fn: crawlNexon },
+      { name: 'krafton', fn: crawlKrafton },
+      { name: 'bucketplace', fn: crawlBucketplace },
+      { name: 'zigbang', fn: crawlZigbang }
     ];
   }
 

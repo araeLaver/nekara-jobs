@@ -58,7 +58,10 @@ export default function JobDetailPage() {
   const getCompanyDisplayName = (companyName: string) => {
     const nameMap: { [key: string]: string } = {
       naver: '네이버',
-      kakao: '카카오',
+      kakao: '카카오', 
+      toss: '토스',
+      carrot: '당근마켓',
+      krafton: '크래프톤',
       line: '라인',
       coupang: '쿠팡',
       baemin: '배달의민족'
@@ -168,24 +171,54 @@ export default function JobDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* 왼쪽: 채용공고 상세 */}
           <div className="lg:col-span-2 space-y-6">
+            {/* 주요 정보 섹션 */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">채용공고 개요</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">근무지</h3>
+                  <p className="text-gray-900">{job.location || '정보 없음'}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">고용 형태</h3>
+                  <p className="text-gray-900">{job.jobType || '정보 없음'}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">경력</h3>
+                  <p className="text-gray-900">{job.experience || '경력 무관'}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">게시일</h3>
+                  <p className="text-gray-900">{formatDate(job.postedAt)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 상세 설명 섹션 */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">채용공고 상세</h2>
-              {job.description && (
+              {job.description ? (
                 <div className="prose max-w-none">
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                  <div className="text-gray-700 leading-relaxed whitespace-pre-line">
                     {job.description}
-                  </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="text-4xl mb-4">📄</div>
+                  <p className="text-lg font-medium mb-2">상세 정보가 없습니다</p>
+                  <p className="text-sm">더 자세한 정보는 원본 채용공고를 확인해주세요.</p>
                 </div>
               )}
               
               {job.tags && job.tags.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-sm font-medium text-gray-900 mb-3">관련 기술</h3>
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h3 className="text-sm font-medium text-gray-900 mb-3">관련 기술 스택</h3>
                   <div className="flex flex-wrap gap-2">
                     {job.tags.map((tag, index) => (
                       <span
                         key={index}
-                        className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm"
+                        className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
                       >
                         #{tag}
                       </span>
@@ -196,19 +229,21 @@ export default function JobDetailPage() {
             </div>
           </div>
 
-          {/* 오른쪽: 지원하기 & 회사 정보 */}
+          {/* 오른쪽: 지원하기 */}
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">지원하기</h3>
+                <p className="text-sm text-gray-600">공식 채용 사이트에서 지원하세요</p>
+              </div>
+              
               <button
                 onClick={() => window.open(job.originalUrl, '_blank')}
-                className="w-full bg-blue-500 text-white font-medium py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors mb-4"
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold py-4 px-6 rounded-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
               >
-                원본 채용공고 보기
+                <span>🚀</span>
+                <span>{getCompanyDisplayName(job.company.name)} 지원하러 가기</span>
               </button>
-              
-              <div className="text-xs text-gray-500 text-center">
-                실제 지원은 해당 회사 채용 사이트에서 가능합니다
-              </div>
             </div>
             
             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -224,12 +259,6 @@ export default function JobDetailPage() {
                     <dd className="text-sm text-gray-900">{job.department}</dd>
                   </div>
                 )}
-                {job.jobType && (
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">고용 형태</dt>
-                    <dd className="text-sm text-gray-900">{job.jobType}</dd>
-                  </div>
-                )}
                 <div>
                   <dt className="text-sm font-medium text-gray-500">게시일</dt>
                   <dd className="text-sm text-gray-900">{formatDate(job.postedAt)}</dd>
@@ -239,34 +268,6 @@ export default function JobDetailPage() {
           </div>
         </div>
       </div>
-
-      {/* 지원 안내 */}
-      <div className="max-w-6xl mx-auto px-4 pb-8">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">지원 방법</h2>
-          <div className="text-center py-8">
-            <div className="text-gray-400 text-6xl mb-4">🚀</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              {getCompanyDisplayName(job.company.name)} 공식 채용 사이트에서 지원하세요
-            </h3>
-            <p className="text-gray-600 mb-6">
-              정확한 정보와 최신 공고는 해당 회사의 공식 채용 페이지에서 확인할 수 있습니다.
-            </p>
-            <a
-              href={job.originalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center bg-blue-500 text-white font-medium py-3 px-6 rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              {getCompanyDisplayName(job.company.name)} 채용 사이트 방문
-              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
-          </div>
-        </div>
-      </div>
     </div>
   )
-}
 }

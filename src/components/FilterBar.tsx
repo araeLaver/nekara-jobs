@@ -109,17 +109,33 @@ export default function FilterBar({ filters, onFilterChange, companies }: Filter
       {/* 회사 필터 버튼들 */}
       <div className="flex flex-wrap gap-2 sm:gap-3 mb-4">
         <span className="text-xs sm:text-sm font-medium text-gray-700">빠른 필터:</span>
-        {['naver', 'kakao', 'line', 'coupang', 'baemin'].map((company) => (
-          <button
-            key={company}
-            onClick={() => handleInputChange('company', localFilters.company === company ? '' : company)}
-            className={`company-badge ${company} ${
-              localFilters.company === company ? 'ring-2 ring-blue-500' : ''
-            }`}
-          >
-            {company.charAt(0).toUpperCase() + company.slice(1)}
-          </button>
-        ))}
+        {['naver', 'kakao', 'line', 'coupang', 'baemin', 'carrot', 'nexon', 'krafton', 'toss', 'bucketplace', 'zigbang'].map((company) => {
+          const companyNames: { [key: string]: string } = {
+            naver: '네이버',
+            kakao: '카카오',
+            line: '라인',
+            coupang: '쿠팡',
+            baemin: '배민',
+            carrot: '당근',
+            nexon: '넥슨',
+            krafton: '크래프톤',
+            toss: '토스',
+            bucketplace: '오늘의집',
+            zigbang: '직방'
+          }
+          
+          return (
+            <button
+              key={company}
+              onClick={() => handleInputChange('company', localFilters.company === company ? '' : company)}
+              className={`company-badge ${company} ${
+                localFilters.company === company ? 'ring-2 ring-blue-500' : ''
+              }`}
+            >
+              {companyNames[company] || company}
+            </button>
+          )
+        })}
       </div>
 
       {/* 필터 초기화 */}

@@ -1,6 +1,6 @@
 const puppeteer = require('puppeteer');
 
-async function crawlNaver() {
+async function crawlKrafton() {
   const browser = await puppeteer.launch({ 
     headless: true,
     args: [
@@ -14,121 +14,102 @@ async function crawlNaver() {
   try {
     const page = await browser.newPage();
     
-    // 더 현실적인 User-Agent 설정
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
-    
-    // 추가 헤더 설정
     await page.setExtraHTTPHeaders({
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
       'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.8',
       'Accept-Encoding': 'gzip, deflate, br'
     });
     
-    // 뷰포트 설정
     await page.setViewport({ width: 1366, height: 768 });
     
-    // 네이버 채용 API 엔드포인트 직접 호출
-    console.log('네이버 채용 API 접근 중...');
+    console.log('크래프톤 채용 사이트 접근 중...');
     
-    // 먼저 메인 페이지 방문하여 세션 쿠키 획득
-    await page.goto('https://recruit.navercorp.com/', {
+    await page.goto('https://krafton.com/careers/', {
       waitUntil: 'domcontentloaded',
       timeout: 30000
     });
 
-    // 페이지 로딩 대기
-    await page.waitForTimeout(3000);
-
-    // 실제 채용공고 페이지로 이동
-    await page.goto('https://recruit.navercorp.com/careers', {
-      waitUntil: 'domcontentloaded',
-      timeout: 30000
-    });
-
-    // 더 긴 대기 시간으로 페이지 완전 로드 기다리기
     await page.waitForTimeout(5000);
 
-    // 채용공고 데이터 수집
     const jobs = await page.evaluate(() => {
       const jobList = [];
+      const seenTitles = new Set();
       
-      // 다양한 셀렉터로 채용공고 요소 찾기
       const possibleSelectors = [
-        '.career-item',
-        '.job-item', 
+        '.job-item',
         '.position-item',
-        '[data-testid*="job"]',
-        '[data-testid*="career"]',
-        '.list-item',
+        '.career-item',
+        '[class*="job"]',
+        '[class*="position"]',
+        '[class*="career"]',
         'article',
-        '.card'
+        '.card',
+        '.post',
+        '.list-item'
       ];
       
       let jobElements = [];
       
-      // 가장 적합한 셀렉터 찾기
       for (const selector of possibleSelectors) {
         const elements = document.querySelectorAll(selector);
         if (elements.length > 0) {
           jobElements = elements;
-          console.log(`사용된 셀렉터: ${selector}, 찾은 요소 수: ${elements.length}`);
+          console.log(`크래프톤 사용된 셀렉터: ${selector}, 찾은 요소 수: ${elements.length}`);
           break;
         }
       }
       
-      // 셀렉터로 찾지 못한 경우 직접 텍스트 기반으로 검색
       if (jobElements.length === 0) {
         const allElements = document.querySelectorAll('*');
         allElements.forEach(el => {
           const text = el.textContent || '';
-          if (text.includes('Frontend') || text.includes('Backend') || text.includes('개발자') || text.includes('Engineer')) {
-            // 너무 큰 컨테이너는 제외
-            if (text.length < 200 && el.children.length < 10) {
+          if (text.includes('개발자') || text.includes('Engineer') || text.includes('Developer') || 
+              text.includes('프로그래머') || text.includes('백엔드') || text.includes('프론트엔드') ||
+              text.includes('소프트웨어') || text.includes('Software') || text.includes('게임') ||
+              text.includes('Game') || text.includes('클라이언트') || text.includes('서버') ||
+              text.includes('PUBG') || text.includes('배그')) {
+            if (text.length < 300 && el.children.length < 15) {
               jobElements.push(el);
             }
           }
         });
       }
 
-      // 중복 제거를 위한 Set
-      const seenTitles = new Set();
-
       Array.from(jobElements).forEach(element => {
         try {
-          // 제목 추출
           let title = '';
           const titleSelectors = [
+            '.job-title', '.position-title', '.title',
             'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-            '.title', '.job-title', '.position-title',
             '[class*="title"]', '[class*="name"]',
-            'strong', 'b'
+            'strong', 'b', 'a'
           ];
           
           for (const selector of titleSelectors) {
             const titleEl = element.querySelector(selector);
-            if (titleEl && titleEl.textContent.trim()) {
+            if (titleEl && titleEl.textContent && titleEl.textContent.trim()) {
               title = titleEl.textContent.trim();
               break;
             }
           }
           
-          // 요소 자체의 텍스트가 짧으면 그것을 제목으로 사용
-          if (!title && element.textContent && element.textContent.trim().length < 100) {
+          if (!title && element.textContent && element.textContent.trim().length < 150) {
             title = element.textContent.trim();
           }
 
-          if (title && title.length > 2 && title.length < 100) {
-            // 불필요한 공백과 특수문자 정리
+          if (title && title.length > 3 && title.length < 200) {
             title = title.replace(/\s+/g, ' ').replace(/\n+/g, ' ').trim();
             
-            // 개발 관련 키워드 확인
             const developmentKeywords = [
+              'software', 'developer', 'engineer', 'programming',
               'frontend', 'backend', 'fullstack', 'full-stack',
-              'developer', 'engineer', 'programming', 'software',
               '개발', '엔지니어', '프로그래머', 'sw', '소프트웨어',
               'android', 'ios', 'mobile', 'web', 'server',
               'data', 'ai', 'ml', 'devops', 'infrastructure',
-              'security', 'embedded', 'graphics'
+              'security', 'platform', 'system', 'game', '게임',
+              'client', 'server', '클라이언트', '서버', 'unity',
+              'unreal', 'engine', '엔진'
             ];
             
             const isDevJob = developmentKeywords.some(keyword => 
@@ -138,57 +119,49 @@ async function crawlNaver() {
             if (isDevJob && !seenTitles.has(title)) {
               seenTitles.add(title);
               
-              // 설명 추출
-              let description = '';
-              const descSelectors = ['.description', '.desc', '.content', 'p'];
-              for (const selector of descSelectors) {
-                const descEl = element.querySelector(selector);
-                if (descEl && descEl.textContent) {
-                  description = descEl.textContent.trim();
-                  break;
-                }
-              }
+              const descEl = element.querySelector('.description, .desc, .content, p, [class*="desc"]');
+              const locationEl = element.querySelector('.location, .addr, [class*="location"]');
+              const typeEl = element.querySelector('.job-type, .employment-type, [class*="type"]');
               
-              // 링크 추출
               const linkEl = element.querySelector('a[href]') || element.closest('a[href]');
-              let url = 'https://recruit.navercorp.com/';
+              let url = 'https://careers.krafton.com/jobs';
               if (linkEl) {
                 const href = linkEl.getAttribute('href');
                 if (href) {
-                  url = href.startsWith('http') ? href : `https://recruit.navercorp.com${href}`;
+                  url = href.startsWith('http') ? href : `https://careers.krafton.com${href}`;
                 }
               }
 
               jobList.push({
                 title: title,
-                description: description.length > 500 ? description.substring(0, 500) + '...' : description,
-                location: '경기 성남시 분당구',
-                department: '개발부문', 
+                description: descEl ? descEl.textContent.trim().substring(0, 500) : '',
+                location: locationEl ? locationEl.textContent.trim() : '경기 성남시 분당구',
+                department: '개발부문',
+                jobType: typeEl ? typeEl.textContent.trim() : '정규직',
                 experience: '',
-                jobType: '정규직',
                 originalUrl: url,
-                company: 'naver',
+                company: 'krafton',
                 postedAt: new Date().toISOString()
               });
             }
           }
         } catch (err) {
-          console.error('개별 요소 파싱 오류:', err);
+          console.error('크래프톤 개별 요소 파싱 오류:', err);
         }
       });
 
       return jobList;
     });
 
-    console.log(`네이버에서 ${jobs.length}개 채용공고 수집 완료`);
+    console.log(`크래프톤에서 ${jobs.length}개 채용공고 수집 완료`);
     return jobs;
 
   } catch (error) {
-    console.error('네이버 크롤링 오류:', error);
+    console.error('크래프톤 크롤링 오류:', error);
     return [];
   } finally {
     await browser.close();
   }
 }
 
-module.exports = { crawlNaver };
+module.exports = { crawlKrafton };
