@@ -75,7 +75,7 @@ export async function GET(
     }
 
     // Fallback: 실제 데이터베이스에서 가져온 공고 정보 (하드코딩)
-    const realJobData = {
+    const realJobData: { [key: string]: any } = {
       'cmeijuklf0001zjmeuo505txd': {
         title: '프론트엔드 엔지니어 (네이버 서비스)',
         description: `🌐 네이버 서비스의 프론트엔드를 책임질 엔지니어를 찾습니다!
