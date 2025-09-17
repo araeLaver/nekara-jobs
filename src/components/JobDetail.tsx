@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { MapPin, ExternalLink, Building2, Clock, Calendar } from 'lucide-react'
 
 interface Job {
   id: string
@@ -68,7 +70,13 @@ export default function JobDetail({ jobId }: JobDetailProps) {
       kakao: '카카오',
       line: '라인',
       coupang: '쿠팡',
-      baemin: '배달의민족'
+      baemin: '배달의민족',
+      carrot: '당근',
+      nexon: '넥슨',
+      krafton: '크래프톤',
+      toss: '토스',
+      bucketplace: '오늘의집',
+      zigbang: '직방'
     }
     return nameMap[companyName] || companyName
   }
@@ -92,14 +100,14 @@ export default function JobDetail({ jobId }: JobDetailProps) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-          <div className="h-6 bg-gray-200 rounded w-1/2 mb-8"></div>
+          <div className="h-8 bg-slate-700 rounded w-3/4 mb-4"></div>
+          <div className="h-6 bg-slate-700 rounded w-1/2 mb-8"></div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
-              <div className="h-32 bg-gray-200 rounded"></div>
-              <div className="h-24 bg-gray-200 rounded"></div>
+              <div className="h-32 bg-slate-800/50 rounded-2xl"></div>
+              <div className="h-24 bg-slate-800/50 rounded-2xl"></div>
             </div>
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-slate-800/50 rounded-2xl"></div>
           </div>
         </div>
       </div>
@@ -110,153 +118,221 @@ export default function JobDetail({ jobId }: JobDetailProps) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="text-center">
-          <div className="text-gray-400 text-6xl mb-4">🚫</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <div className="text-slate-500 text-6xl mb-4">🚫</div>
+          <h3 className="text-lg font-medium text-white mb-2">
             채용공고를 찾을 수 없습니다
           </h3>
-          <p className="text-gray-500 mb-4">
+          <p className="text-slate-400 mb-4">
             {error || '요청하신 채용공고가 존재하지 않거나 삭제되었습니다.'}
           </p>
-          <button
+          <motion.button
             onClick={() => window.history.back()}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             뒤로 가기
-          </button>
+          </motion.button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <motion.div 
+      className="max-w-4xl mx-auto px-4 py-8"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
       {/* 헤더 */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">{job.title}</h1>
-        <div className="flex flex-wrap items-center gap-4 text-gray-600">
+        <motion.h1 
+          className="text-3xl font-bold text-white mb-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
+          {job.title}
+        </motion.h1>
+        <motion.div 
+          className="flex flex-wrap items-center gap-4 text-slate-300"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
           <span 
-            className={`company-badge ${job.company.name.toLowerCase()} cursor-pointer`}
+            className={`company-badge ${job.company.name.toLowerCase()} cursor-pointer hover:scale-105 transition-transform`}
             onClick={handleCompanyClick}
           >
             {getCompanyDisplayName(job.company.name)}
           </span>
           {job.location && (
-            <span className="flex items-center">
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+            <span className="flex items-center gap-1">
+              <MapPin className="w-4 h-4 text-purple-400" />
               {job.location}
             </span>
           )}
-          <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm">
+          <span className="bg-slate-700/50 text-slate-200 px-3 py-1 rounded-full text-sm border border-slate-600/50">
             {job.jobType}
           </span>
-          <span className="text-sm">
+          <span className="text-sm flex items-center gap-1">
+            <Calendar className="w-4 h-4 text-emerald-400" />
             {formatDate(job.postedAt)} 게시
           </span>
-        </div>
+        </motion.div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* 메인 콘텐츠 */}
         <div className="lg:col-span-2 space-y-6">
           {/* 직무 설명 */}
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">직무 설명</h2>
-            <div className="text-gray-700">
-              <p className="mb-4">{job.description}</p>
-              <p className="text-gray-600">
-                {getCompanyDisplayName(job.company.name)}에서 {job.title} 포지션을 담당할 인재를 모집합니다.
-                자세한 직무 내용과 지원 자격은 아래 '지원하기' 버튼을 통해 확인하실 수 있습니다.
-              </p>
+          <motion.div 
+            className="bg-slate-800/50 backdrop-blur-md rounded-2xl p-6 border border-slate-700"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-purple-400" />
+              직무 설명
+            </h2>
+            <div className="text-slate-200">
+              <div className="prose prose-slate prose-invert max-w-none">
+                <div className="text-base leading-relaxed whitespace-pre-wrap break-words">
+                  {job.description}
+                </div>
+              </div>
+              <div className="mt-6 p-4 bg-slate-700/30 rounded-xl border border-slate-600/30">
+                <p className="text-slate-300 leading-relaxed">
+                  💼 <strong className="text-white">{getCompanyDisplayName(job.company.name)}</strong>에서 <strong className="text-purple-300">{job.title}</strong> 포지션을 담당할 인재를 모집합니다.
+                  <br />
+                  📋 자세한 직무 내용과 지원 자격은 아래 '지원하기' 버튼을 통해 확인하실 수 있습니다.
+                </p>
+              </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* 태그 */}
           {job.tags && job.tags.length > 0 && (
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">관련 기술/태그</h2>
+            <motion.div 
+              className="bg-slate-800/50 backdrop-blur-md rounded-2xl p-6 border border-slate-700"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              <h2 className="text-xl font-semibold text-white mb-4">관련 기술/태그</h2>
               <div className="flex flex-wrap gap-2">
                 {job.tags.map((tag, index) => (
-                  <span
+                  <motion.span
                     key={index}
-                    className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm"
+                    className="bg-slate-700/50 text-slate-200 px-3 py-1.5 rounded-full text-sm hover:bg-purple-600/30 hover:text-purple-200 transition-all duration-300 backdrop-blur-sm border border-slate-600/50"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: 0.5 + index * 0.05 }}
+                    whileHover={{ scale: 1.05, y: -2 }}
                   >
                     #{tag}
-                  </span>
+                  </motion.span>
                 ))}
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
 
         {/* 사이드바 */}
         <div className="space-y-6">
           {/* 지원하기 카드 */}
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <button
+          <motion.div 
+            className="bg-slate-800/50 backdrop-blur-md rounded-2xl p-6 border border-slate-700"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <motion.button
               onClick={handleApplyClick}
-              className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-600 transition-colors mb-4"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-300 mb-4 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
             >
+              <ExternalLink className="w-4 h-4" />
               지원하기
-            </button>
-            <p className="text-xs text-gray-500 text-center">
+            </motion.button>
+            <p className="text-xs text-slate-400 text-center">
               {getCompanyDisplayName(job.company.name)} 채용 사이트로 이동합니다
             </p>
-          </div>
+          </motion.div>
 
           {/* 기본 정보 */}
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">기본 정보</h3>
+          <motion.div 
+            className="bg-slate-800/50 backdrop-blur-md rounded-2xl p-6 border border-slate-700"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-emerald-400" />
+              기본 정보
+            </h3>
             <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">회사명</span>
-                <span className="font-medium">{job.company.nameEn}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">회사명</span>
+                <span className="font-medium text-slate-200">{job.company.nameEn}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">부서</span>
-                <span className="font-medium">{job.department}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">부서</span>
+                <span className="font-medium text-slate-200">{job.department}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">고용형태</span>
-                <span className="font-medium">{job.jobType}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">고용형태</span>
+                <span className="font-medium text-slate-200">{job.jobType}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">경력</span>
-                <span className="font-medium">{job.experience}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">경력</span>
+                <span className="font-medium text-slate-200">{job.experience}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">급여</span>
-                <span className="font-medium">{job.salary}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">급여</span>
+                <span className="font-medium text-slate-200">{job.salary}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">근무지역</span>
-                <span className="font-medium">{job.location}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">근무지역</span>
+                <span className="font-medium text-slate-200">{job.location}</span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* 회사 정보 */}
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">회사 정보</h3>
+          <motion.div 
+            className="bg-slate-800/50 backdrop-blur-md rounded-2xl p-6 border border-slate-700"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-pink-400" />
+              회사 정보
+            </h3>
             <div className="text-center">
-              <h4 className="font-medium text-gray-900 mb-2">{job.company.nameEn}</h4>
-              <p className="text-sm text-gray-600 mb-4">
+              <h4 className="font-medium text-white mb-2">{job.company.nameEn}</h4>
+              <p className="text-sm text-slate-300 mb-4">
                 {getCompanyDisplayName(job.company.name)}
               </p>
               {job.company.website && (
-                <button
+                <motion.button
                   onClick={handleCompanyClick}
-                  className="text-blue-500 hover:text-blue-600 text-sm"
+                  className="text-purple-400 hover:text-purple-300 text-sm flex items-center gap-1 mx-auto transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
+                  <ExternalLink className="w-3 h-3" />
                   회사 홈페이지 방문
-                </button>
+                </motion.button>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }

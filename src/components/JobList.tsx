@@ -1,5 +1,8 @@
 'use client'
 
+import { motion } from 'framer-motion'
+import { ExternalLink, MapPin, Clock, Briefcase } from 'lucide-react'
+
 interface Job {
   id: string
   title: string
@@ -70,7 +73,6 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
     return 'text-green-600'
   }
 
-
   const getCompanyDisplayName = (companyName: string) => {
     const nameMap: { [key: string]: string } = {
       naver: '네이버',
@@ -89,29 +91,31 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
   }
 
   const handleJobClick = (job: Job) => {
-    // 상세 페이지로 이동
     window.location.href = `/jobs/${job.id}`
   }
 
   const handleApplyClick = (e: React.MouseEvent, job: Job) => {
-    e.stopPropagation() // 카드 클릭 이벤트와 분리
+    e.stopPropagation()
     
-    // 실제 채용 사이트 URL로 직접 이동
     if (job.originalUrl && job.originalUrl !== '#') {
       const companyDisplayName = getCompanyDisplayName(job.company.name)
       
-      // 확인 메시지를 통해 사용자가 실제 채용 페이지로 이동할 것임을 알림
       if (confirm(`${companyDisplayName} 채용 페이지로 이동하시겠습니까?\n\n"${job.title}" 공고를 확인할 수 있습니다.`)) {
         window.open(job.originalUrl, '_blank')
       }
     } else {
-      // 폴백: 회사별 기본 채용 사이트로 이동
       const fallbackUrls: { [key: string]: string } = {
-        naver: 'https://recruit.navercorp.com/naver/job/list/developer',
+        naver: 'https://recruit.navercorp.com/',
         kakao: 'https://careers.kakao.com/jobs',
         line: 'https://careers.linecorp.com/ko/jobs',
-        coupang: 'https://www.coupang.jobs/kr/',
-        baemin: 'https://www.woowahan.com/jobs'
+        coupang: 'https://www.coupang.jobs/',
+        baemin: 'https://www.woowahan.com/jobs',
+        nexon: 'https://career.nexon.com/',
+        krafton: 'https://krafton.com/kr/careers/',
+        carrot: 'https://team.daangn.com/jobs/',
+        toss: 'https://toss.im/career',
+        zigbang: 'https://careers.zigbang.com/',
+        bucketplace: 'https://careers.bucketplace.co.kr/'
       }
       
       const fallbackUrl = fallbackUrls[job.company.name]
@@ -151,11 +155,11 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
   if (jobs.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-400 text-6xl mb-4">💼</div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <div className="text-slate-500 text-6xl mb-4">💼</div>
+        <h3 className="text-lg font-medium text-white mb-2">
           검색 결과가 없습니다
         </h3>
-        <p className="text-gray-500">
+        <p className="text-slate-400">
           다른 검색어나 필터를 시도해보세요
         </p>
       </div>
@@ -166,122 +170,155 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
     <div>
       {/* 결과 개수 */}
       <div className="mb-4 sm:mb-6">
-        <p className="text-xs sm:text-sm text-gray-600">
-          총 <span className="font-semibold text-gray-900">{jobs.length}</span>개의 채용공고
+        <p className="text-xs sm:text-sm text-slate-400">
+          총 <span className="font-semibold text-white">{jobs.length}</span>개의 채용공고
         </p>
       </div>
 
       {/* 채용공고 카드들 */}
-      <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
-        {jobs.map((job) => (
-          <div
+      <div className="space-y-6 mb-6 sm:mb-8">
+        {jobs.map((job, index) => (
+          <motion.div
             key={job.id}
-            className="job-card"
+            className="bg-slate-800/50 backdrop-blur-md rounded-2xl border border-slate-700 p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-500/50 transition-all duration-500 cursor-pointer group"
             onClick={() => handleJobClick(job)}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+            whileHover={{ y: -4, scale: 1.01 }}
           >
-            <div className="flex justify-between items-start mb-3 sm:mb-4">
-              <div className="flex-1 pr-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="responsive-subtitle font-semibold text-gray-900 hover:text-blue-600 line-clamp-2">
-                    {job.title}
-                  </h3>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
-                  <span className={`company-badge ${job.company.name.toLowerCase()}`}>
+            {/* 상단: 회사 정보와 날짜 */}
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="flex-1">
+                  <div className={`company-badge ${job.company.name.toLowerCase()} mb-1 text-sm font-medium px-3 py-1 rounded-full inline-block`}>
                     {getCompanyDisplayName(job.company.name)}
-                  </span>
-                  {job.department && (
-                    <span className="flex items-center hidden-mobile">
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                      <span className="truncate">{job.department}</span>
+                  </div>
+                  <div className="text-sm text-slate-400 flex items-center gap-2">
+                    <Clock className="w-3 h-3 flex-shrink-0" />
+                    <span className="truncate">
+                      {job.department && `${job.department} • `}{formatDate(job.postedAt)}
                     </span>
-                  )}
-                  {job.location && (
-                    <span className="flex items-center">
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      {job.location}
-                    </span>
-                  )}
-                  {job.experience && (
-                    <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
-                      {job.experience}
-                    </span>
-                  )}
+                  </div>
                 </div>
               </div>
-              <div className="text-right flex flex-col items-end">
-                <p className="text-sm text-gray-500 mb-2">
-                  {formatDate(job.postedAt)}
-                </p>
-                <button
-                  onClick={(e) => handleApplyClick(e, job)}
-                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
-                >
-                  지원하기
-                </button>
+              <motion.button
+                onClick={(e) => handleApplyClick(e, job)}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-5 py-2.5 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 flex-shrink-0"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span>지원하기</span>
+                <ExternalLink className="w-4 h-4" />
+              </motion.button>
+            </div>
+
+            {/* 중간: 제목과 정보 */}
+            <div className="mb-4">
+              <h3 className="text-xl font-bold text-white mb-3 group-hover:text-purple-300 transition-colors line-clamp-2">
+                {job.title}
+              </h3>
+              
+              <div className="flex flex-wrap items-center gap-4 text-sm text-slate-300">
+                {job.location && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4 text-purple-400" />
+                    <span>{job.location}</span>
+                  </div>
+                )}
+                
+                {job.experience && (
+                  <div className="flex items-center gap-1">
+                    <Briefcase className="w-4 h-4 text-pink-400" />
+                    <span>{job.experience}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-1">
+                  <Clock className="w-4 h-4 text-emerald-400" />
+                  <span>정규직</span>
+                </div>
               </div>
             </div>
 
-
+            {/* 하단: 태그들 */}
             {job.tags && job.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {job.tags.slice(0, 5).map((tag, index) => (
-                  <span
+              <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-600/30">
+                {job.tags.slice(0, 6).map((tag, index) => (
+                  <motion.span
                     key={index}
-                    className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs"
+                    className="bg-slate-700/50 text-slate-200 px-3 py-1.5 rounded-full text-xs font-medium hover:bg-purple-600/30 hover:text-purple-200 transition-all duration-300 backdrop-blur-sm border border-slate-600/50"
+                    whileHover={{ scale: 1.05, y: -1 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
                   >
-                    #{tag}
-                  </span>
+                    {tag}
+                  </motion.span>
                 ))}
+                {job.tags.length > 6 && (
+                  <span className="text-slate-400 text-xs px-3 py-1.5 bg-slate-700/30 rounded-full border border-slate-600/50">
+                    +{job.tags.length - 6}개 더
+                  </span>
+                )}
               </div>
             )}
-          </div>
+          </motion.div>
         ))}
       </div>
 
       {/* 페이지네이션 */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center space-x-2">
-          <button
+        <motion.div 
+          className="flex justify-center items-center space-x-3"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <motion.button
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="px-3 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-xl border border-slate-600 bg-slate-800/50 backdrop-blur-md text-slate-300 hover:bg-slate-700/70 hover:border-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             이전
-          </button>
+          </motion.button>
           
           {[...Array(Math.min(5, totalPages))].map((_, i) => {
             const page = currentPage <= 3 ? i + 1 : currentPage - 2 + i
             if (page > totalPages) return null
             
             return (
-              <button
+              <motion.button
                 key={page}
                 onClick={() => onPageChange(page)}
-                className={`px-3 py-2 rounded-lg border ${
+                className={`px-4 py-2 rounded-xl border transition-all duration-300 font-medium ${
                   currentPage === page
-                    ? 'bg-blue-500 text-white border-blue-500'
-                    : 'border-gray-300 bg-white hover:bg-gray-50'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-purple-500 shadow-lg shadow-purple-500/25'
+                    : 'border-slate-600 bg-slate-800/50 backdrop-blur-md text-slate-300 hover:bg-slate-700/70 hover:border-purple-500/50'
                 }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
               >
                 {page}
-              </button>
+              </motion.button>
             )
           })}
           
-          <button
+          <motion.button
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className="px-3 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-xl border border-slate-600 bg-slate-800/50 backdrop-blur-md text-slate-300 hover:bg-slate-700/70 hover:border-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             다음
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       )}
     </div>
   )

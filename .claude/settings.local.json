@@ -23,7 +23,13 @@
       "Bash(grep:*)",
       "Bash(pg_isready:*)",
       "Bash(findstr:*)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(npm install:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(copy:*)",
+      "Bash(dir:*)",
+      "Bash(del /q /s .nextcache*)",
+      "Bash(del /q /s node_modules.cache*)"
     ],
     "deny": [],
     "ask": [],

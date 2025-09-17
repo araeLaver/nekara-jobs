@@ -5,6 +5,8 @@ import Header from '@/components/Header'
 import JobList from '@/components/JobList'
 import FilterBar from '@/components/FilterBar'
 import StatsCard from '@/components/StatsCard'
+import HeroSection from '@/components/HeroSection'
+import CompanyTabs from '@/components/CompanyTabs'
 
 interface Job {
   id: string
@@ -39,7 +41,8 @@ export default function Home() {
     company: '',
     location: '',
     jobType: '',
-    search: ''
+    search: '',
+    department: ''
   })
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -117,38 +120,34 @@ export default function Home() {
     fetchJobs(page)
   }
 
+  const handleHeroSearch = (query: string) => {
+    setFilters(prev => ({ ...prev, search: query }))
+    setCurrentPage(1)
+  }
+
+  const handleCompanyChange = (company: string) => {
+    setFilters(prev => ({ ...prev, company }))
+    setCurrentPage(1)
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-900">
       <Header />
       
+      {/* 히어로 섹션 */}
+      <HeroSection 
+        onSearch={handleHeroSearch}
+        totalJobs={stats?.totalJobs || 0}
+      />
+
+      {/* 회사별 탭 */}
+      <CompanyTabs 
+        activeCompany={filters.company}
+        onCompanyChange={handleCompanyChange}
+        companyStats={stats?.jobsByCompany || []}
+      />
+      
       <main className="max-w-7xl mx-auto container-mobile sm:px-6 lg:px-8 py-4 sm:py-8">
-        {/* 통계 카드 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
-          <StatsCard
-            title="전체 채용공고"
-            value={stats?.totalJobs || 0}
-            icon="💼"
-            color="blue"
-          />
-          <StatsCard
-            title="참여 기업"
-            value={stats?.totalCompanies || 0}
-            icon="🏢"
-            color="green"
-          />
-          <StatsCard
-            title="최근 7일"
-            value={stats?.recentJobs || 0}
-            icon="🆕"
-            color="purple"
-          />
-          <StatsCard
-            title="업데이트"
-            value="실시간"
-            icon="🔄"
-            color="orange"
-          />
-        </div>
 
         {/* 필터 바 */}
         <FilterBar

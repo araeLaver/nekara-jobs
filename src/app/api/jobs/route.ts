@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     const location = searchParams.get('location') || ''
     const jobType = searchParams.get('jobType') || ''
     const search = searchParams.get('search') || ''
+    const department = searchParams.get('department') || ''
 
     const skip = (page - 1) * limit
 
@@ -36,6 +37,13 @@ export async function GET(request: NextRequest) {
     if (jobType) {
       where.jobType = {
         contains: jobType,
+        mode: 'insensitive'
+      }
+    }
+
+    if (department) {
+      where.department = {
+        contains: department,
         mode: 'insensitive'
       }
     }

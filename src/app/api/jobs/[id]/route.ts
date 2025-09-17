@@ -17,9 +17,64 @@ export async function GET(
       )
     }
 
-    // 데이터베이스 조회는 스킵하고 바로 realJobData 사용
+    // 먼저 실제 데이터베이스에서 조회 시도
+    try {
+      const job = await prisma.job.findUnique({
+        where: {
+          id: jobId
+        },
+        include: {
+          company: {
+            select: {
+              id: true,
+              name: true,
+              nameEn: true,
+              logo: true
+            }
+          },
+          tags: {
+            include: {
+              tag: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      })
 
-    // 실제 데이터베이스에서 가져온 공고 정보
+      if (job) {
+        // 데이터베이스에서 찾은 실제 데이터 반환
+        const formattedJob = {
+          id: job.id,
+          title: job.title,
+          description: job.description || '',
+          location: job.location || '',
+          department: job.department || '',
+          jobType: job.jobType || '정규직',
+          experience: job.experience || '',
+          postedAt: job.postedAt.toISOString(),
+          deadline: job.deadline ? job.deadline.toISOString() : null,
+          isActive: job.isActive,
+          originalUrl: job.originalUrl,
+          company: {
+            id: job.company.id,
+            name: job.company.name,
+            nameEn: job.company.nameEn,
+            logo: job.company.logo
+          },
+          tags: job.tags.map(t => t.tag.name)
+        }
+        
+        return NextResponse.json(formattedJob)
+      }
+    } catch (dbError) {
+      console.error('Database query error:', dbError)
+      // 데이터베이스 오류 시 아래 하드코딩된 데이터로 fallback
+    }
+
+    // Fallback: 실제 데이터베이스에서 가져온 공고 정보 (하드코딩)
     const realJobData = {
       'cmeijuklf0001zjmeuo505txd': {
         title: '프론트엔드 엔지니어 (네이버 서비스)',
