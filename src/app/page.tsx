@@ -15,12 +15,15 @@ interface Job {
   location: string
   department: string
   jobType: string
+  experience: string
   postedAt: string
   deadline?: string
   originalUrl: string
+  isActive: boolean
   company: {
     id: string
     name: string
+    nameEn: string
     logo?: string
   }
   tags: string[]
