@@ -67,8 +67,8 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    // 채용공고 조회
-    const [jobs, total] = await Promise.all([
+    // 먼저 모든 채용공고를 조회 (정렬을 위해 pagination 없이)
+    const [allJobs, total] = await Promise.all([
       prisma.job.findMany({
         where,
         include: {
@@ -92,9 +92,7 @@ export async function GET(request: NextRequest) {
         },
         orderBy: {
           postedAt: 'desc'
-        },
-        skip,
-        take: limit
+        }
       }),
       prisma.job.count({
         where
@@ -105,7 +103,7 @@ export async function GET(request: NextRequest) {
     const companyOrder = ['naver', 'kakao', 'line', 'coupang', 'baemin', 'nexon', 'toss', 'carrot', 'krafton', 'zigbang', 'bucketplace']
 
     // 데이터 형식 변환
-    const formattedJobs = jobs.map(job => ({
+    const formattedJobs = allJobs.map(job => ({
       id: job.id,
       title: job.title,
       description: job.description || '',
@@ -152,10 +150,13 @@ export async function GET(request: NextRequest) {
 
     console.log('정렬 후 첫 5개 회사:', formattedJobs.slice(0, 5).map(job => job.company.name))
 
+    // 정렬 후 페이지네이션 적용
+    const paginatedJobs = formattedJobs.slice(skip, skip + limit)
+
     const totalPages = Math.ceil(total / limit)
 
     return NextResponse.json({
-      jobs: formattedJobs,
+      jobs: paginatedJobs,
       pagination: {
         current: page,
         total,
