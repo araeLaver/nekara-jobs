@@ -29,7 +29,9 @@
       "Bash(copy:*)",
       "Bash(dir:*)",
       "Bash(del /q /s .nextcache*)",
-      "Bash(del /q /s node_modules.cache*)"
+      "Bash(del /q /s node_modules.cache*)",
+      "Bash(npm run build:*)",
+      "Bash(npx vercel:*)"
     ],
     "deny": [],
     "ask": [],

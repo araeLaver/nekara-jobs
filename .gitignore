@@ -111,3 +111,4 @@ ssl/
 # 임시 파일
 tmp/
 temp/
+.vercel

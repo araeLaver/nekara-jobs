@@ -138,13 +138,56 @@ export default function JobDetail({ jobId }: JobDetailProps) {
     )
   }
 
+  // Schema Markup for Job Posting
+  const jobSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
+    title: job.title,
+    description: job.description,
+    datePosted: job.postedAt,
+    employmentType: job.jobType,
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: getCompanyDisplayName(job.company.name),
+      sameAs: job.company.website
+    },
+    jobLocation: {
+      '@type': 'Place',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: job.location,
+        addressCountry: 'KR'
+      }
+    },
+    baseSalary: job.salary ? {
+      '@type': 'MonetaryAmount',
+      currency: 'KRW',
+      value: job.salary
+    } : undefined,
+    qualifications: job.experience,
+    workHours: job.jobType,
+    url: `https://devlunch.co.kr/jobs/${job.id}`,
+    identifier: {
+      '@type': 'PropertyValue',
+      name: 'Job ID',
+      value: job.id
+    }
+  }
+
   return (
-    <motion.div 
-      className="max-w-4xl mx-auto px-4 py-8"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
+    <>
+      {/* Schema Markup */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jobSchema) }}
+      />
+
+      <motion.div
+        className="max-w-4xl mx-auto px-4 py-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
       {/* 헤더 */}
       <div className="mb-8">
         <motion.h1 
@@ -333,6 +376,7 @@ export default function JobDetail({ jobId }: JobDetailProps) {
           </motion.div>
         </div>
       </div>
-    </motion.div>
+      </motion.div>
+    </>
   )
 }

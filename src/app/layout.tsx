@@ -31,7 +31,8 @@ export const metadata = {
   },
   alternates: {
     canonical: 'https://devlunch.co.kr',
-  }
+  },
+  metadataBase: new URL('https://devlunch.co.kr')
 }
 
 export default function RootLayout({
@@ -71,7 +72,7 @@ export default function RootLayout({
         <meta name="distribution" content="Global" />
         <meta name="rating" content="General" />
         <meta name="revisit-after" content="1 days" />
-        <link rel="canonical" href="https://nekara-jobs.com" />
+        <link rel="canonical" href="https://devlunch.co.kr" />
       </head>
       <body className={inter.className}>
         <div className="min-h-screen bg-gray-50">

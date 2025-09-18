@@ -1,7 +1,10 @@
 import { MetadataRoute } from 'next'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://nekara-jobs.com'
+  const baseUrl = 'https://devlunch.co.kr'
   
   // 기본 페이지들
   const routes = [
@@ -21,19 +24,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 동적으로 채용공고 페이지들 추가
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/jobs?limit=1000`)
-    const data = await response.json()
-    
-    if (data.jobs && Array.isArray(data.jobs)) {
-      const jobRoutes = data.jobs.map((job: any) => ({
-        url: `${baseUrl}/jobs/${job.id}`,
-        lastModified: new Date(job.postedAt),
-        changeFrequency: 'weekly' as const,
-        priority: 0.8,
-      }))
-      
-      routes.push(...jobRoutes)
-    }
+    const jobs = await prisma.job.findMany({
+      where: {
+        isActive: true
+      },
+      select: {
+        id: true,
+        updatedAt: true,
+        postedAt: true
+      },
+      orderBy: {
+        postedAt: 'desc'
+      },
+      take: 1000
+    })
+
+    const jobRoutes = jobs.map((job) => ({
+      url: `${baseUrl}/jobs/${job.id}`,
+      lastModified: job.updatedAt || job.postedAt,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }))
+
+    routes.push(...jobRoutes)
   } catch (error) {
     console.error('Error generating sitemap:', error)
   }
