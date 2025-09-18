@@ -71,7 +71,7 @@ export default function FilterBar({ filters, onFilterChange, companies }: Filter
             <option value="">전체 회사</option>
             {companies.map((company) => (
               <option key={company.company} value={company.company}>
-                {company.company} ({company.count}개)
+                {company.company}
               </option>
             ))}
           </select>

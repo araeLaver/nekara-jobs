@@ -52,13 +52,6 @@ export default function CompanyTabs({ activeCompany, onCompanyChange, companySta
                   `}
                 >
                   <span className="truncate">{company.name}</span>
-                  <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-bold ${
-                    isActive 
-                      ? 'bg-white/90 text-purple-700' 
-                      : 'bg-slate-800/80 text-slate-200'
-                  }`}>
-                    {count}
-                  </span>
                 </button>
               )
             })}

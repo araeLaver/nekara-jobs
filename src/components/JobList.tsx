@@ -110,7 +110,7 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
         line: 'https://careers.linecorp.com/ko/jobs',
         coupang: 'https://www.coupang.jobs/',
         baemin: 'https://www.woowahan.com/jobs',
-        nexon: 'https://career.nexon.com/',
+        nexon: 'https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/eFN2TGwybFErZHBza0Nkb09ld1B6UT09',
         krafton: 'https://krafton.com/kr/careers/',
         carrot: 'https://team.daangn.com/jobs/',
         toss: 'https://toss.im/career',
