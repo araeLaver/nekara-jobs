@@ -168,12 +168,6 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
 
   return (
     <div>
-      {/* 결과 개수 */}
-      <div className="mb-4 sm:mb-6">
-        <p className="text-xs sm:text-sm text-slate-400">
-          총 <span className="font-semibold text-white">{jobs.length}</span>개의 채용공고
-        </p>
-      </div>
 
       {/* 채용공고 카드들 */}
       <div className="space-y-6 mb-6 sm:mb-8">

@@ -101,6 +101,9 @@ export async function GET(request: NextRequest) {
       })
     ])
 
+    // 회사 순서 정의
+    const companyOrder = ['naver', 'kakao', 'line', 'coupang', 'baemin', 'nexon', 'toss', 'carrot', 'krafton', 'zigbang', 'bucketplace']
+
     // 데이터 형식 변환
     const formattedJobs = jobs.map(job => ({
       id: job.id,
@@ -122,6 +125,28 @@ export async function GET(request: NextRequest) {
       },
       tags: job.tags.map(t => t.tag.name)
     }))
+
+    // 회사 순서에 따라 정렬 (naver, kakao, line 순)
+    formattedJobs.sort((a, b) => {
+      const aIndex = companyOrder.indexOf(a.company.name)
+      const bIndex = companyOrder.indexOf(b.company.name)
+
+      // 둘 다 정의된 순서에 있는 경우
+      if (aIndex !== -1 && bIndex !== -1) {
+        if (aIndex !== bIndex) {
+          return aIndex - bIndex
+        }
+        // 같은 회사면 최신 날짜 순
+        return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
+      }
+
+      // 하나만 정의된 순서에 있는 경우
+      if (aIndex !== -1) return -1
+      if (bIndex !== -1) return 1
+
+      // 둘 다 정의되지 않은 경우 최신 날짜 순
+      return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
+    })
 
     const totalPages = Math.ceil(total / limit)
 
