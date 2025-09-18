@@ -91,8 +91,18 @@ export default function JobDetail({ jobId }: JobDetailProps) {
   }
 
   const handleCompanyClick = () => {
-    if (job?.company.website) {
-      window.open(job.company.website, '_blank')
+    const companyWebsites: { [key: string]: string } = {
+      naver: 'https://www.navercorp.com',
+      kakao: 'https://www.kakaocorp.com',
+      line: 'https://linecorp.com',
+      coupang: 'https://www.coupang.com',
+      baemin: 'https://www.woowahan.com',
+      nexon: 'https://www.nexon.com'
+    }
+
+    const website = job?.company.website || companyWebsites[job?.company.name || '']
+    if (website) {
+      window.open(website, '_blank')
     }
   }
 

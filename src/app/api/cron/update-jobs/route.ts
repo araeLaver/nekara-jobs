@@ -113,11 +113,12 @@ export async function GET(request: NextRequest) {
 // 샘플 데이터 생성 함수 (실제로는 웹 크롤링으로 대체)
 async function generateSampleJobs() {
   const companies = [
-    { name: 'naver', nameEn: 'NAVER Corporation', website: 'https://www.navercorp.com' },
-    { name: 'kakao', nameEn: 'Kakao Corporation', website: 'https://www.kakaocorp.com' },
-    { name: 'line', nameEn: 'LINE Corporation', website: 'https://linecorp.com' },
-    { name: 'coupang', nameEn: 'Coupang Corporation', website: 'https://www.coupang.com' },
-    { name: 'baemin', nameEn: 'Woowa Brothers', website: 'https://www.woowahan.com' }
+    { name: 'naver', nameEn: 'NAVER Corporation', website: 'https://www.navercorp.com', careerUrl: 'https://recruit.navercorp.com/rcrt/list.do' },
+    { name: 'kakao', nameEn: 'Kakao Corporation', website: 'https://www.kakaocorp.com', careerUrl: 'https://careers.kakao.com/jobs' },
+    { name: 'line', nameEn: 'LINE Corporation', website: 'https://linecorp.com', careerUrl: 'https://careers.linecorp.com/ko/jobs' },
+    { name: 'coupang', nameEn: 'Coupang Corporation', website: 'https://www.coupang.com', careerUrl: 'https://www.coupang.jobs/kr/' },
+    { name: 'baemin', nameEn: 'Woowa Brothers', website: 'https://www.woowahan.com', careerUrl: 'https://career.woowahan.com/' },
+    { name: 'nexon', nameEn: 'NEXON Korea Corporation', website: 'https://www.nexon.com', careerUrl: 'https://career.nexon.com/user/recruit/member/postList' }
   ]
 
   const jobTypes = ['프론트엔드 개발자', '백엔드 개발자', '풀스택 개발자', '안드로이드 개발자', 'iOS 개발자', 'DevOps 엔지니어', 'AI/ML 엔지니어', 'Data Engineer']
@@ -145,7 +146,7 @@ async function generateSampleJobs() {
       jobType: '정규직',
       experience,
       salary: '',
-      originalUrl: `https://${company.name}.com/careers`,
+      originalUrl: company.careerUrl,
       companyName: company.name,
       companyNameEn: company.nameEn,
       companyWebsite: company.website,

@@ -111,7 +111,7 @@ export async function GET(
         department: '프론트엔드개발팀',
         experience: '경력 3년 이상',
         company: { name: 'naver', nameEn: 'NAVER Corporation' },
-        originalUrl: 'https://recruit.navercorp.com/?jobId=NAVER_1755735372804_1'
+        originalUrl: 'https://recruit.navercorp.com/rcrt/list.do'
       },
       'cmeijuklj0003zjmehuqqgj3b': {
         title: '백엔드 엔지니어 (서비스 플랫폼)',
@@ -146,7 +146,7 @@ export async function GET(
         department: '백엔드개발팀',
         experience: '경력 3년 이상',
         company: { name: 'naver', nameEn: 'NAVER Corporation' },
-        originalUrl: 'https://recruit.navercorp.com/?jobId=NAVER_1755735372808_2'
+        originalUrl: 'https://recruit.navercorp.com/rcrt/list.do'
       },
       'cmeijukll0005zjmezsbzmppa': {
         title: 'Android/iOS 모바일 엔지니어',
@@ -181,7 +181,7 @@ export async function GET(
         department: '모바일개발팀',
         experience: '경력 3년 이상',
         company: { name: 'naver', nameEn: 'NAVER Corporation' },
-        originalUrl: 'https://recruit.navercorp.com/?jobId=NAVER_1755735372809_3'
+        originalUrl: 'https://recruit.navercorp.com/rcrt/list.do'
       },
       'cmeijuklm0007zjmerdxm7fd5': {
         title: 'AI/ML Engineer (네이버 AI LAB)',
@@ -216,7 +216,7 @@ export async function GET(
         department: 'AI개발팀',
         experience: '경력 3년 이상',
         company: { name: 'naver', nameEn: 'NAVER Corporation' },
-        originalUrl: 'https://recruit.navercorp.com/?jobId=NAVER_1755735372810_4'
+        originalUrl: 'https://recruit.navercorp.com/rcrt/list.do'
       },
       'cmeijukln0009zjme0gkni92u': {
         title: '데이터 엔지니어 (데이터 플랫폼)',
@@ -251,7 +251,7 @@ export async function GET(
         department: '데이터개발팀',
         experience: '경력 3년 이상',
         company: { name: 'naver', nameEn: 'NAVER Corporation' },
-        originalUrl: 'https://recruit.navercorp.com/?jobId=NAVER_1755735372812_5'
+        originalUrl: 'https://recruit.navercorp.com/rcrt/list.do'
       },
       'cmeijv0jk0001nknbaj299lpa': {
         title: 'AI 풀스택 개발자 (카카오브레인)',
@@ -286,7 +286,7 @@ export async function GET(
         department: 'AI개발팀',
         experience: '경력 3년 이상',
         company: { name: 'kakao', nameEn: 'Kakao Corporation' },
-        originalUrl: 'https://careers.kakao.com/jobs/P-14191?skillSet=&part=TECHNOLOGY&company=KAKAO&keyword=&employeeType=&page=1&ref=nekara&jobId=KAKAO_1755608313726_1'
+        originalUrl: 'https://careers.kakao.com/jobs'
       },
       'cmeijv0jn0003nknbgsm1eegl': {
         title: 'AI모델 플랫폼 프론트엔드 개발자',
@@ -321,7 +321,7 @@ export async function GET(
         department: 'AI개발팀',
         experience: '경력 3년 이상',
         company: { name: 'kakao', nameEn: 'Kakao Corporation' },
-        originalUrl: 'https://careers.kakao.com/jobs/P-14188?skillSet=&part=TECHNOLOGY&company=KAKAO&keyword=&employeeType=&page=1&ref=nekara&jobId=KAKAO_1755608313730_2'
+        originalUrl: 'https://careers.kakao.com/jobs'
       },
       'cmeijv0jx000fnknb7xop5blf': {
         title: '검색 서비스 플랫폼 개발자',
@@ -356,7 +356,7 @@ export async function GET(
         department: '개발팀',
         experience: '경력 3년 이상',
         company: { name: 'kakao', nameEn: 'Kakao Corporation' },
-        originalUrl: 'https://careers.kakao.com/jobs/P-14008?skillSet=&part=TECHNOLOGY&company=KAKAO&keyword=&employeeType=&page=1&ref=nekara&jobId=KAKAO_1755608313740_8'
+        originalUrl: 'https://careers.kakao.com/jobs'
       },
       'cmeijv0jp0005nknbb9jsghxr': {
         title: 'Multimodal LLM Research Engineer',
@@ -391,7 +391,7 @@ export async function GET(
         department: '개발팀',
         experience: '경력 3년 이상',
         company: { name: 'kakao', nameEn: 'Kakao Corporation' },
-        originalUrl: 'https://careers.kakao.com/jobs/P-14048?skillSet=&part=TECHNOLOGY&company=KAKAO&keyword=&employeeType=&page=1&ref=nekara&jobId=KAKAO_1755608313732_3'
+        originalUrl: 'https://careers.kakao.com/jobs'
       },
       'cmeijv0jr0007nknbmguni79o': {
         title: '비즈앱 iOS 개발자',
@@ -426,7 +426,7 @@ export async function GET(
         department: 'iOS개발팀',
         experience: '경력 3년 이상',
         company: { name: 'kakao', nameEn: 'Kakao Corporation' },
-        originalUrl: 'https://careers.kakao.com/jobs/P-14169?skillSet=&part=TECHNOLOGY&company=KAKAO&keyword=&employeeType=&page=1&ref=nekara&jobId=KAKAO_1755608313734_4'
+        originalUrl: 'https://careers.kakao.com/jobs'
       },
       'cmeijv0js0009nknbjm25em1i': {
         title: '보이스톡/페이스톡 서버 엔지니어',
@@ -461,7 +461,7 @@ export async function GET(
         department: '개발팀',
         experience: '경력 3년 이상',
         company: { name: 'kakao', nameEn: 'Kakao Corporation' },
-        originalUrl: 'https://careers.kakao.com/jobs/P-14172?skillSet=&part=TECHNOLOGY&company=KAKAO&keyword=&employeeType=&page=1&ref=nekara&jobId=KAKAO_1755608313735_5'
+        originalUrl: 'https://careers.kakao.com/jobs'
       },
       'cmeijv0ju000bnknb7cmlb8mt': {
         title: '카카오톡 SRE 엔지니어',
@@ -716,7 +716,7 @@ LINE의 매력:
         department: '백엔드개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs/2779/?ref=nekara&jobId=LINE_1755608409544_8'
+        originalUrl: 'https://careers.linecorp.com/ko/jobs'
       },
       'cmeijx2gv0001ngpdrl9s5jap': {
         title: 'WEBTOON Social Marketing Manager',
@@ -786,7 +786,7 @@ LINE 검색의 특별함:
         department: '개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs/2370/?ref=nekara&jobId=LINE_1755608409537_2'
+        originalUrl: 'https://careers.linecorp.com/ko/jobs'
       },
       'cmeijx2gz0005ngpdj1v29oi9': {
         title: 'Platform Server QA Engineer',
@@ -795,7 +795,7 @@ LINE 검색의 특별함:
         department: '백엔드개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs/2787/?ref=nekara&jobId=LINE_1755608409539_3'
+        originalUrl: 'https://careers.linecorp.com/ko/jobs'
       },
       'cmeijx2h00007ngpdkqpft9qq': {
         title: 'WEBTOON Operations & Growth Intern',
@@ -804,7 +804,7 @@ LINE 검색의 특별함:
         department: '개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs/2334/?ref=nekara&jobId=LINE_1755608409540_4'
+        originalUrl: 'https://careers.linecorp.com/ko/jobs'
       },
       'cmeijx2h10009ngpdyolglewm': {
         title: 'WEBTOON Creative Marketing Designer',
@@ -813,7 +813,7 @@ LINE 검색의 특별함:
         department: '개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs/2783/?ref=nekara&jobId=LINE_1755608409541_5'
+        originalUrl: 'https://careers.linecorp.com/ko/jobs'
       },
       'cmeijx2h2000bngpd04suayjz': {
         title: 'Backend Engineer (Corporate Business)',
@@ -848,7 +848,7 @@ LINE 기업 비즈니스의 매력:
         department: '백엔드개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs/2781/?ref=nekara&jobId=LINE_1755608409542_6'
+        originalUrl: 'https://careers.linecorp.com/ko/jobs'
       },
       'cmeijx2h4000dngpdnu7ngofk': {
         title: 'AD Platform Product Manager',
@@ -884,7 +884,7 @@ LINE 광고 플랫폼의 매력:
         department: '개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs/2614/?ref=nekara&jobId=LINE_1755608409543_7'
+        originalUrl: 'https://careers.linecorp.com/ko/jobs'
       },
       'cmeh4ykz8001djgqxesr04kjb': {
         title: '백엔드 개발자 (CS Product)',
@@ -893,7 +893,7 @@ LINE 광고 플랫폼의 매력:
         department: 'CS프로덕트실',
         experience: '경력 4년 이상',
         company: { name: 'baemin', nameEn: 'Woowa Brothers' },
-        originalUrl: 'https://career.woowahan.com/recruitment/R2411018/detail'
+        originalUrl: 'https://career.woowahan.com/'
       },
       'cmeh4ykz9001fjgqxv1ms9cng': {
         title: '데이터 엔지니어 (라이더 모델링)',
@@ -902,7 +902,7 @@ LINE 광고 플랫폼의 매력:
         department: '딜리버리엔진실',
         experience: '경력 4년 이상',
         company: { name: 'baemin', nameEn: 'Woowa Brothers' },
-        originalUrl: 'https://career.woowahan.com/recruitment/R2504003/detail'
+        originalUrl: 'https://career.woowahan.com/'
       },
       'cmeh4ykz9001hjgqx1o66ftns': {
         title: 'AI Engineer (배달의민족)',
@@ -911,7 +911,7 @@ LINE 광고 플랫폼의 매력:
         department: 'AI실',
         experience: '경력 5년 이상',
         company: { name: 'baemin', nameEn: 'Woowa Brothers' },
-        originalUrl: 'https://career.woowahan.com/recruitment/R2506002/detail'
+        originalUrl: 'https://career.woowahan.com/'
       },
       'cmeh4ykza001jjgqxui24yv9c': {
         title: '백엔드 시스템 개발자 (Delivery)',
@@ -920,7 +920,7 @@ LINE 광고 플랫폼의 매력:
         department: '딜리버리서비스팀',
         experience: '경력 4년 이상',
         company: { name: 'baemin', nameEn: 'Woowa Brothers' },
-        originalUrl: 'https://career.woowahan.com/recruitment/R2409006/detail'
+        originalUrl: 'https://career.woowahan.com/'
       },
       'cmeh4ykza001ljgqxv6ylxvvm': {
         title: 'ML Engineer (AI 플랫폼)',
@@ -929,7 +929,7 @@ LINE 광고 플랫폼의 매력:
         department: 'AI실',
         experience: '경력 4년 이상',
         company: { name: 'baemin', nameEn: 'Woowa Brothers' },
-        originalUrl: 'https://career.woowahan.com/recruitment/R2505004/detail'
+        originalUrl: 'https://career.woowahan.com/'
       },
       'cmeh4ykzb001njgqx53jgt0zt': {
         title: 'QA 자동화 엔지니어',
@@ -938,7 +938,7 @@ LINE 광고 플랫폼의 매력:
         department: '품질개발팀',
         experience: '경력 3년 이상',
         company: { name: 'baemin', nameEn: 'Woowa Brothers' },
-        originalUrl: 'https://career.woowahan.com/recruitment/R2507012/detail'
+        originalUrl: 'https://career.woowahan.com/'
       }
     }
     
