@@ -88,7 +88,7 @@ export default function JobDetail({ jobId }: JobDetailProps) {
       line: 'https://careers.linecorp.com/ko',
       coupang: 'https://www.coupang.jobs/kr/',
       baemin: 'https://career.woowahan.com/',
-      nexon: 'https://www.jobkorea.co.kr/company/1882711/recruit'
+      nexon: 'https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/eFN2TGwybFErZHBza0Nkb09ld1B6UT09'
     }
 
     const careerUrl = job?.originalUrl || careerUrls[job?.company.name || '']
@@ -116,7 +116,7 @@ export default function JobDetail({ jobId }: JobDetailProps) {
       line: 'https://careers.linecorp.com/ko',
       coupang: 'https://www.coupang.jobs/kr/',
       baemin: 'https://career.woowahan.com/',
-      nexon: 'https://www.jobkorea.co.kr/company/1882711/recruit'
+      nexon: 'https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/eFN2TGwybFErZHBza0Nkb09ld1B6UT09'
     }
 
     const website = job?.company.website || companyWebsites[job?.company.name || '']

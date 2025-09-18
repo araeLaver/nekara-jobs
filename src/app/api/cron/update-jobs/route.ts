@@ -118,7 +118,7 @@ async function generateSampleJobs() {
     { name: 'line', nameEn: 'LINE Corporation', website: 'https://linecorp.com', careerUrl: 'https://careers.linecorp.com/ko' },
     { name: 'coupang', nameEn: 'Coupang Corporation', website: 'https://www.coupang.com', careerUrl: 'https://www.coupang.jobs/kr/' },
     { name: 'baemin', nameEn: 'Woowa Brothers', website: 'https://www.woowahan.com', careerUrl: 'https://career.woowahan.com/' },
-    { name: 'nexon', nameEn: 'NEXON Korea Corporation', website: 'https://www.nexon.com', careerUrl: 'https://www.jobkorea.co.kr/company/1882711/recruit' }
+    { name: 'nexon', nameEn: 'NEXON Korea Corporation', website: 'https://www.nexon.com', careerUrl: 'https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/eFN2TGwybFErZHBza0Nkb09ld1B6UT09' }
   ]
 
   const jobTypes = ['프론트엔드 개발자', '백엔드 개발자', '풀스택 개발자', '안드로이드 개발자', 'iOS 개발자', 'DevOps 엔지니어', 'AI/ML 엔지니어', 'Data Engineer']
