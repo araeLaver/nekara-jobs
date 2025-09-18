@@ -92,7 +92,7 @@ export default function JobDetail({ jobId }: JobDetailProps) {
     }
 
     const careerUrl = job?.originalUrl || careerUrls[job?.company.name || '']
-    if (careerUrl) {
+    if (careerUrl && job) {
       const companyDisplayName = getCompanyDisplayName(job.company.name)
       if (confirm(`${companyDisplayName} 채용 페이지로 이동하여 지원하시겠습니까?`)) {
         window.open(careerUrl, '_blank')
