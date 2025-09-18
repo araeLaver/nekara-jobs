@@ -10,7 +10,16 @@
     },
     "src/app/api/jobs/[id]/route.ts": {
       "maxDuration": 30
+    },
+    "src/app/api/cron/update-jobs/route.ts": {
+      "maxDuration": 300
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/update-jobs",
+      "schedule": "0 9 * * *"
+    }
+  ],
   "regions": ["icn1"]
 }
