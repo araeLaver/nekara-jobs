@@ -68,8 +68,33 @@ export default function Home() {
       
       const data = await response.json()
       console.log('API 응답:', data)
-      
-      setJobs(data.jobs || [])
+
+      // 회사 순서 정의 (네이버, 카카오, 라인 순)
+      const companyOrder = ['naver', 'kakao', 'line', 'coupang', 'baemin', 'nexon', 'toss', 'carrot', 'krafton', 'zigbang', 'bucketplace']
+
+      // 클라이언트 사이드에서도 정렬 (API 응답이 정렬되지 않은 경우 대비)
+      const sortedJobs = (data.jobs || []).sort((a: any, b: any) => {
+        const aIndex = companyOrder.indexOf(a.company?.name)
+        const bIndex = companyOrder.indexOf(b.company?.name)
+
+        // 둘 다 정의된 순서에 있는 경우
+        if (aIndex !== -1 && bIndex !== -1) {
+          if (aIndex !== bIndex) {
+            return aIndex - bIndex
+          }
+          // 같은 회사면 최신 날짜 순
+          return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
+        }
+
+        // 하나만 정의된 순서에 있는 경우
+        if (aIndex !== -1) return -1
+        if (bIndex !== -1) return 1
+
+        // 둘 다 정의되지 않은 경우 최신 날짜 순
+        return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
+      })
+
+      setJobs(sortedJobs)
       setTotalPages(data.pagination?.pages || 1)
       setCurrentPage(page)
     } catch (error) {
