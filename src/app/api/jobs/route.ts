@@ -127,6 +127,8 @@ export async function GET(request: NextRequest) {
     }))
 
     // 회사 순서에 따라 정렬 (naver, kakao, line 순)
+    console.log('정렬 전 첫 5개 회사:', formattedJobs.slice(0, 5).map(job => job.company.name))
+
     formattedJobs.sort((a, b) => {
       const aIndex = companyOrder.indexOf(a.company.name)
       const bIndex = companyOrder.indexOf(b.company.name)
@@ -147,6 +149,8 @@ export async function GET(request: NextRequest) {
       // 둘 다 정의되지 않은 경우 최신 날짜 순
       return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
     })
+
+    console.log('정렬 후 첫 5개 회사:', formattedJobs.slice(0, 5).map(job => job.company.name))
 
     const totalPages = Math.ceil(total / limit)
 

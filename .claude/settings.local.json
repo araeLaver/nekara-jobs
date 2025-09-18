@@ -33,7 +33,8 @@
       "Bash(npm run build:*)",
       "Bash(npx vercel:*)",
       "WebFetch(domain:careers.linecorp.com)",
-      "WebFetch(domain:careers.nexon.com)"
+      "WebFetch(domain:careers.nexon.com)",
+      "WebFetch(domain:devlunch.co.kr)"
     ],
     "deny": [],
     "ask": [],
