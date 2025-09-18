@@ -82,10 +82,20 @@ export default function JobDetail({ jobId }: JobDetailProps) {
   }
 
   const handleApplyClick = () => {
-    if (job?.originalUrl) {
+    const careerUrls: { [key: string]: string } = {
+      naver: 'https://recruit.navercorp.com/rcrt/list.do',
+      kakao: 'https://careers.kakao.com/jobs',
+      line: 'https://careers.linecorp.com/ko',
+      coupang: 'https://www.coupang.jobs/kr/',
+      baemin: 'https://career.woowahan.com/',
+      nexon: 'https://www.jobkorea.co.kr/company/1882711/recruit'
+    }
+
+    const careerUrl = job?.originalUrl || careerUrls[job?.company.name || '']
+    if (careerUrl) {
       const companyDisplayName = getCompanyDisplayName(job.company.name)
       if (confirm(`${companyDisplayName} 채용 페이지로 이동하여 지원하시겠습니까?`)) {
-        window.open(job.originalUrl, '_blank')
+        window.open(careerUrl, '_blank')
       }
     }
   }
@@ -98,6 +108,15 @@ export default function JobDetail({ jobId }: JobDetailProps) {
       coupang: 'https://www.coupang.com',
       baemin: 'https://www.woowahan.com',
       nexon: 'https://www.nexon.com'
+    }
+
+    const careerUrls: { [key: string]: string } = {
+      naver: 'https://recruit.navercorp.com/rcrt/list.do',
+      kakao: 'https://careers.kakao.com/jobs',
+      line: 'https://careers.linecorp.com/ko',
+      coupang: 'https://www.coupang.jobs/kr/',
+      baemin: 'https://career.woowahan.com/',
+      nexon: 'https://www.jobkorea.co.kr/company/1882711/recruit'
     }
 
     const website = job?.company.website || companyWebsites[job?.company.name || '']

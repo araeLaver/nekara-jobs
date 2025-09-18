@@ -716,7 +716,7 @@ LINE의 매력:
         department: '백엔드개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs'
+        originalUrl: 'https://careers.linecorp.com/ko'
       },
       'cmeijx2gv0001ngpdrl9s5jap': {
         title: 'WEBTOON Social Marketing Manager',
@@ -751,7 +751,7 @@ WEBTOON의 매력:
         department: '프론트엔드개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs'
+        originalUrl: 'https://careers.linecorp.com/ko'
       },
       'cmeijx2gy0003ngpd864dqip2': {
         title: 'Search Engineer',
@@ -786,7 +786,7 @@ LINE 검색의 특별함:
         department: '개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs'
+        originalUrl: 'https://careers.linecorp.com/ko'
       },
       'cmeijx2gz0005ngpdj1v29oi9': {
         title: 'Platform Server QA Engineer',
@@ -795,7 +795,7 @@ LINE 검색의 특별함:
         department: '백엔드개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs'
+        originalUrl: 'https://careers.linecorp.com/ko'
       },
       'cmeijx2h00007ngpdkqpft9qq': {
         title: 'WEBTOON Operations & Growth Intern',
@@ -804,7 +804,7 @@ LINE 검색의 특별함:
         department: '개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs'
+        originalUrl: 'https://careers.linecorp.com/ko'
       },
       'cmeijx2h10009ngpdyolglewm': {
         title: 'WEBTOON Creative Marketing Designer',
@@ -813,7 +813,7 @@ LINE 검색의 특별함:
         department: '개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs'
+        originalUrl: 'https://careers.linecorp.com/ko'
       },
       'cmeijx2h2000bngpd04suayjz': {
         title: 'Backend Engineer (Corporate Business)',
@@ -848,7 +848,7 @@ LINE 기업 비즈니스의 매력:
         department: '백엔드개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs'
+        originalUrl: 'https://careers.linecorp.com/ko'
       },
       'cmeijx2h4000dngpdnu7ngofk': {
         title: 'AD Platform Product Manager',
@@ -884,7 +884,7 @@ LINE 광고 플랫폼의 매력:
         department: '개발팀',
         experience: '경력 3년 이상',
         company: { name: 'line', nameEn: 'LINE Corporation' },
-        originalUrl: 'https://careers.linecorp.com/ko/jobs'
+        originalUrl: 'https://careers.linecorp.com/ko'
       },
       'cmeh4ykz8001djgqxesr04kjb': {
         title: '백엔드 개발자 (CS Product)',

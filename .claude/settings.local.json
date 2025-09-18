@@ -31,7 +31,9 @@
       "Bash(del /q /s .nextcache*)",
       "Bash(del /q /s node_modules.cache*)",
       "Bash(npm run build:*)",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "WebFetch(domain:careers.linecorp.com)",
+      "WebFetch(domain:careers.nexon.com)"
     ],
     "deny": [],
     "ask": [],
