@@ -1,0 +1,24 @@
+{
+  "buildCommand": "npx prisma generate && npm run build",
+  "outputDirectory": ".next",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "NEXTAUTH_URL": "@nextauth_url",
+    "PORT": "@port",
+    "CRAWL_INTERVAL_HOURS": "@crawl_interval_hours",
+    "CRAWL_TIMEOUT_MS": "@crawl_timeout_ms"
+  },
+  "functions": {
+    "src/app/api/jobs/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/jobs/[id]/route.ts": {
+      "maxDuration": 30
+    }
+  },
+  "regions": ["icn1"]
+}
