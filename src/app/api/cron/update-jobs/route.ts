@@ -4,6 +4,15 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 // Dynamic import for crawler
+const getRealCrawler = () => {
+  try {
+    return require('../../../../crawler/real-crawler')
+  } catch (error) {
+    console.error('RealCrawler not found:', error)
+    return null
+  }
+}
+
 const getSimpleCrawler = () => {
   try {
     return require('../../../../crawler/simple-crawler')
@@ -123,14 +132,14 @@ export async function GET(request: NextRequest) {
 // 실제 크롤러를 사용하여 채용 공고 가져오기
 async function generateSampleJobs() {
   try {
-    // SimpleCrawler 사용 (실제 크롤러가 안정화될 때까지)
-    const SimpleCrawler = getSimpleCrawler()
-    if (!SimpleCrawler) {
-      throw new Error('SimpleCrawler module not found')
+    // RealCrawler 사용
+    const RealCrawler = getRealCrawler()
+    if (!RealCrawler) {
+      throw new Error('RealCrawler module not found')
     }
-    const crawler = new SimpleCrawler()
+    const crawler = new RealCrawler()
 
-    console.log('Starting job data generation...')
+    console.log('Starting real job crawling...')
     const crawlResults = await crawler.crawlAll()
 
     // 크롤링 결과를 DB 포맷으로 변환
