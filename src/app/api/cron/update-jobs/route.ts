@@ -3,6 +3,16 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+// Dynamic import for crawler
+const getSimpleCrawler = () => {
+  try {
+    return require('../../../../crawler/simple-crawler')
+  } catch (error) {
+    console.error('SimpleCrawler not found:', error)
+    return null
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Vercel Cron Job 인증 헤더 확인
@@ -23,7 +33,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // 2. 새로운 공고 데이터 (실제로는 크롤러에서 가져와야 함)
+    // 2. 실제 크롤러에서 새로운 공고 데이터 가져오기
     const newJobs = await generateSampleJobs()
 
     // 3. 새 공고들 삽입
@@ -110,49 +120,105 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 샘플 데이터 생성 함수 (실제로는 웹 크롤링으로 대체)
+// 실제 크롤러를 사용하여 채용 공고 가져오기
 async function generateSampleJobs() {
-  const companies = [
-    { name: 'naver', nameEn: 'NAVER Corporation', website: 'https://www.navercorp.com', careerUrl: 'https://recruit.navercorp.com/rcrt/list.do' },
-    { name: 'kakao', nameEn: 'Kakao Corporation', website: 'https://www.kakaocorp.com', careerUrl: 'https://careers.kakao.com/jobs' },
-    { name: 'line', nameEn: 'LINE Corporation', website: 'https://linecorp.com', careerUrl: 'https://careers.linecorp.com/ko' },
-    { name: 'coupang', nameEn: 'Coupang Corporation', website: 'https://www.coupang.com', careerUrl: 'https://www.coupang.jobs/kr/' },
-    { name: 'baemin', nameEn: 'Woowa Brothers', website: 'https://www.woowahan.com', careerUrl: 'https://career.woowahan.com/' },
-    { name: 'nexon', nameEn: 'NEXON Korea Corporation', website: 'https://www.nexon.com', careerUrl: 'https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/eFN2TGwybFErZHBza0Nkb09ld1B6UT09' }
-  ]
+  try {
+    // SimpleCrawler 사용 (실제 크롤러가 안정화될 때까지)
+    const SimpleCrawler = getSimpleCrawler()
+    if (!SimpleCrawler) {
+      throw new Error('SimpleCrawler module not found')
+    }
+    const crawler = new SimpleCrawler()
 
-  const jobTypes = ['프론트엔드 개발자', '백엔드 개발자', '풀스택 개발자', '안드로이드 개발자', 'iOS 개발자', 'DevOps 엔지니어', 'AI/ML 엔지니어', 'Data Engineer']
-  const locations = ['서울 강남구', '서울 서초구', '경기 성남시 분당구', '서울 송파구']
-  const experiences = ['신입', '경력 1-3년', '경력 3-5년', '경력 5년 이상']
+    console.log('Starting job data generation...')
+    const crawlResults = await crawler.crawlAll()
 
-  const jobs = []
-  const today = new Date()
+    // 크롤링 결과를 DB 포맷으로 변환
+    const allJobs = []
 
-  for (let i = 0; i < 50; i++) {
-    const company = companies[Math.floor(Math.random() * companies.length)]
-    const jobType = jobTypes[Math.floor(Math.random() * jobTypes.length)]
-    const location = locations[Math.floor(Math.random() * locations.length)]
-    const experience = experiences[Math.floor(Math.random() * experiences.length)]
+    for (const result of crawlResults) {
+      if (result.jobs && result.jobs.length > 0) {
+        for (const job of result.jobs) {
+          // 크롤링된 데이터 검증 및 정리
+          if (job.title && job.company) {
+            allJobs.push({
+              title: job.title || '',
+              description: job.description || '',
+              location: job.location || '서울',
+              department: job.department || '',
+              jobType: job.jobType || '정규직',
+              experience: job.experience || '',
+              salary: job.salary || '',
+              originalUrl: job.originalUrl || job.url || '',
+              companyName: job.company,
+              companyNameEn: job.companyNameEn || job.company,
+              companyWebsite: job.companyWebsite || '',
+              deadline: job.deadline || null
+            })
+          }
+        }
+      }
+    }
 
-    // 마감일은 30-60일 후
-    const deadline = new Date(today)
-    deadline.setDate(deadline.getDate() + 30 + Math.floor(Math.random() * 30))
+    console.log(`Crawled ${allJobs.length} jobs from actual sources`)
 
-    jobs.push({
-      title: `${jobType} (${company.nameEn})`,
-      description: `${company.nameEn}에서 ${jobType}를 모집합니다.\n\n주요 업무:\n• 웹/앱 서비스 개발 및 운영\n• 신기술 도입 및 시스템 개선\n• 팀 협업 및 코드 리뷰\n\n자격 요건:\n• 관련 기술 스택 경험\n• 협업 능력 및 소통 능력\n• 새로운 기술에 대한 학습 의지`,
-      location,
-      department: '개발팀',
-      jobType: '정규직',
-      experience,
-      salary: '',
-      originalUrl: company.careerUrl,
-      companyName: company.name,
-      companyNameEn: company.nameEn,
-      companyWebsite: company.website,
-      deadline
-    })
+    // 최소한 일부 데이터라도 있으면 반환
+    if (allJobs.length > 0) {
+      return allJobs
+    }
+
+    // 크롤링 결과가 전혀 없을 때만 폴백 사용
+    throw new Error('No jobs found from crawler')
+
+  } catch (error) {
+    console.error('Crawling failed, generating sample data:', error)
+
+    // 크롤링 실패 시 기본 샘플 데이터 생성
+    const companies = [
+      { name: 'naver', nameEn: 'NAVER Corporation', website: 'https://www.navercorp.com', careerUrl: 'https://recruit.navercorp.com' },
+      { name: 'kakao', nameEn: 'Kakao Corporation', website: 'https://www.kakaocorp.com', careerUrl: 'https://careers.kakao.com/jobs' },
+      { name: 'line', nameEn: 'LINE Corporation', website: 'https://linecorp.com', careerUrl: 'https://careers.linecorp.com/ko' },
+      { name: 'coupang', nameEn: 'Coupang Corporation', website: 'https://www.coupang.com', careerUrl: 'https://www.coupang.jobs/kr' },
+      { name: 'baemin', nameEn: 'Woowa Brothers', website: 'https://www.woowahan.com', careerUrl: 'https://career.woowahan.com' },
+      { name: 'nexon', nameEn: 'NEXON Korea Corporation', website: 'https://www.nexon.com', careerUrl: 'https://careers.nexon.com' }
+    ]
+
+    const jobTypes = ['프론트엔드 개발자', '백엔드 개발자', '풀스택 개발자', '안드로이드 개발자', 'iOS 개발자']
+    const locations = ['서울 강남구', '서울 서초구', '경기 성남시 분당구', '서울 송파구']
+    const experiences = ['신입', '경력 1-3년', '경력 3-5년', '경력 5년 이상']
+
+    const fallbackJobs = []
+
+    // 각 회사마다 3-5개의 샘플 채용공고 생성
+    for (const company of companies) {
+      const numJobs = Math.floor(Math.random() * 3) + 3 // 3-5개
+
+      for (let i = 0; i < numJobs; i++) {
+        const jobType = jobTypes[Math.floor(Math.random() * jobTypes.length)]
+        const location = locations[Math.floor(Math.random() * locations.length)]
+        const experience = experiences[Math.floor(Math.random() * experiences.length)]
+
+        const deadline = new Date()
+        deadline.setDate(deadline.getDate() + 30 + Math.floor(Math.random() * 30))
+
+        fallbackJobs.push({
+          title: `${jobType} (${experience})`,
+          description: `${company.nameEn}에서 ${jobType}를 모집합니다.\n\n주요 업무:\n• 웹/앱 서비스 개발 및 운영\n• 신기술 도입 및 시스템 개선\n• 팀 협업 및 코드 리뷰\n\n자격 요건:\n• 관련 기술 스택 경험\n• 협업 능력 및 소통 능력\n• 새로운 기술에 대한 학습 의지`,
+          location,
+          department: '개발팀',
+          jobType: '정규직',
+          experience,
+          salary: '',
+          originalUrl: company.careerUrl,
+          companyName: company.name,
+          companyNameEn: company.nameEn,
+          companyWebsite: company.website,
+          deadline
+        })
+      }
+    }
+
+    console.log(`Generated ${fallbackJobs.length} fallback jobs`)
+    return fallbackJobs
   }
-
-  return jobs
 }

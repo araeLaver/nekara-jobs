@@ -112,3 +112,4 @@ ssl/
 tmp/
 temp/
 .vercel
+.env*.local
