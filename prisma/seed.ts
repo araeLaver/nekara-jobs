@@ -405,6 +405,43 @@ async function main() {
 
   console.log(`✅ ${jobsData.length}개 빅테크 채용공고 생성 완료`)
 
+  // 사용자 데이터 생성
+  const users = [
+    {
+      id: 'clq8e5z1x0000y6o8g7h3j9k2',
+      username: 'kimdeveloper',
+      nickname: '김개발자',
+      avatar: '/avatars/avatar1.png',
+    },
+    {
+      id: 'clq8e6a2y0001y6o8h4f5k1l3',
+      username: 'leepark',
+      nickname: '이파크',
+      avatar: '/avatars/avatar2.png',
+    },
+    {
+      id: 'clq8e6b3z0002y6o8j6g7m2n4',
+      username: 'choi_engineer',
+      nickname: '최엔지',
+      avatar: '/avatars/avatar3.png',
+    },
+    {
+      id: 'clq8e6c4a0003y6o8k8h9n3o5',
+      username: 'parkfrontend',
+      nickname: '박프론트',
+      avatar: '/avatars/avatar4.png',
+    },
+  ]
+
+  for (const userData of users) {
+    await prisma.user.upsert({
+      where: { id: userData.id },
+      update: {},
+      create: userData,
+    })
+    console.log(`✅ 사용자 생성/업데이트: ${userData.nickname}`)
+  }
+
   console.log('🎉 시드 데이터 생성 완료!')
 }
 

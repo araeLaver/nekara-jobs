@@ -37,7 +37,14 @@
       "WebFetch(domain:devlunch.co.kr)",
       "Bash(openssl rand:*)",
       "WebFetch(domain:nekara-jobs.vercel.app)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "WebFetch(domain:recruit.navercorp.com)",
+      "WebFetch(domain:careers.kakao.com)",
+      "WebFetch(domain:recruit.kakaobank.com)",
+      "WebFetch(domain:career.woowahan.com)",
+      "WebFetch(domain:localhost)",
+      "WebFetch(domain:kakaopay.career.greetinghr.com)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": [],

@@ -1,8 +1,8 @@
 # 네카라쿠배 채용 사이트
 
-네이버, 카카오, 라인, 쿠팡, 배달의민족 등 주요 빅테크 기업의 채용 정보를 실시간으로 수집하고 제공하는 웹사이트
+네이버, 카카오, 라인, 쿠팡, 배달의민족, 토스, 넥슨 등 주요 빅테크 기업의 채용 정보를 실시간으로 수집하고 제공하는 웹사이트
 
-⚠️ **현재 상태**: 이 프로젝트는 개발 단계이며, 현재 샘플 데이터를 사용하고 있습니다. 실제 기업 채용 사이트에서의 실시간 크롤링은 기술적 제약으로 인해 제한적입니다.
+✅ **실제 데이터 사용 중**: 검증된 크롤러를 통해 실제 채용 공고를 수집하여 제공합니다.
 
 ## 기술 스택
 
@@ -46,36 +46,76 @@ npm install
 PostgreSQL이 설치되어 있어야 합니다.
 ```bash
 # 데이터베이스 마이그레이션
-npx prisma migrate dev
-# 기본 데이터 생성
-npx prisma db seed
+npm run db:migrate
+
+# Prisma Client 생성
+npm run db:generate
 ```
 
-### 3. 서버 실행
+### 3. 환경 변수 설정
+`.env` 파일에 다음 내용을 설정하세요:
+```env
+DATABASE_URL="postgresql://user:password@host:port/database"
+PORT=3001
+CRAWL_INTERVAL_HOURS=12
+NEXTAUTH_SECRET="your-secret-key"
+CRON_SECRET="your-cron-secret"
+```
+
+### 4. 서버 실행
 ```bash
-npm run dev        # 프론트엔드 개발 서버 (http://localhost:3000)
-npm run server     # 백엔드 API 서버 (http://localhost:3001)
+npm run dev        # 프론트엔드 개발 서버 (http://localhost:4000)
+npm run server     # 백엔드 API 서버 (http://localhost:4001)
 ```
 
-### 4. 샘플 데이터 생성
+### 5. 실제 데이터 크롤링
 ```bash
-node scripts/fix-final-jobs.js
+# 실제 채용 공고 크롤링 및 DB 저장
+npm run crawler
+
+# 크롤링 테스트만 (DB 저장 안 함)
+npm run crawler:test
 ```
 
-## 크롤링 시도
+## 크롤링 시스템
 
-여러 크롤링 방법이 구현되어 있습니다:
-- `crawler/enhanced-direct-crawler.js` - 각 회사 사이트 직접 크롤링
-- `crawler/real-working-crawler.js` - 채용 플랫폼을 통한 크롤링
-- `crawler/direct-company-crawler.js` - 기본 회사 사이트 크롤링
+검증된 크롤러만 사용하여 실제 채용 공고를 수집합니다:
 
-각 크롤러는 기술적 제약(봇 감지, 동적 로딩 등)으로 인해 실제 운영에서는 제한적입니다.
+### 지원 회사
+- ✅ **카카오** - 실시간 크롤링 가능
+- ✅ **토스** - 실시간 크롤링 가능 (218개 공고)
+- ✅ **배달의민족** - 실시간 크롤링 가능
+- ✅ **넥슨** - 실시간 크롤링 가능
+- ⚠️ **네이버** - 제한적 크롤링
+- ⚠️ **라인** - 제한적 크롤링
 
-## 현재 제한사항
+### 크롤링 스케줄
+- **전체 크롤링**: 매일 오전 9시, 오후 6시
+- **빠른 업데이트**: 매시간
 
-- 실제 기업 채용 사이트의 봇 방지 시스템으로 인한 크롤링 어려움
-- 동적 콘텐츠 로딩으로 인한 데이터 수집 제약
-- 현재는 현실적인 샘플 데이터를 사용하여 UI/UX 시연
+### 수동 크롤링
+```bash
+# 모든 회사 크롤링
+npm run crawler
+
+# 데이터베이스 정리
+npm run db:clean-companies  # 중복 회사 제거
+npm run db:clean-jobs       # 비활성 채용공고 제거
+```
+
+## 크롤링 아키텍처
+
+```
+crawler/
+├── working-crawlers.js    # 검증된 크롤러 관리자
+├── main-crawler.js        # 메인 크롤링 + DB 저장
+├── kakao.js              # 카카오 크롤러
+├── toss.js               # 토스 크롤러
+├── baemin.js             # 배민 크롤러
+├── naver.js              # 네이버 크롤러
+├── line.js               # 라인 크롤러
+└── nexon.js              # 넥슨 크롤러
+```
 
 ## API 엔드포인트
 

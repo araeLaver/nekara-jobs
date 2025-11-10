@@ -1,228 +1,193 @@
 'use client'
 
-import { useParams, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useAuth } from '@/context/AuthContext'
+import { User, CommunityPost, CommunityComment } from '@prisma/client'
 
-interface Post {
-  id: string
-  title: string
-  content: string
-  category: string
-  tags: string[]
-  likes: number
-  views: number
-  createdAt: string
-  author: {
-    id: string
-    nickname: string
-    avatar?: string
-  }
-  _count: {
-    comments: number
-  }
+// Define more specific types for the page
+type CommentWithAuthor = CommunityComment & { author: User }
+type PostLikeInfo = { userId: string }
+type PostWithDetails = CommunityPost & {
+  author: User
+  comments: CommentWithAuthor[]
+  likedBy: PostLikeInfo[]
 }
 
 export default function PostDetailPage() {
   const params = useParams()
-  const router = useRouter()
-  const [post, setPost] = useState<Post | null>(null)
+  const { id: postId } = params
+  const { currentUser, loading: authLoading } = useAuth()
+
+  const [post, setPost] = useState<PostWithDetails | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const postId = params.id as string
-
-  useEffect(() => {
-    if (postId) {
-      fetchPost()
-    }
-  }, [postId])
+  const [comment, setComment] = useState('')
+  const [commentLoading, setCommentLoading] = useState(false)
+  
+  // Like state
+  const [isLiked, setIsLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState(0)
+  const [likeLoading, setLikeLoading] = useState(false)
 
   const fetchPost = async () => {
+    if (!postId) return
     try {
+      setLoading(true)
       const response = await fetch(`/api/community/posts/${postId}`)
-      
       if (response.ok) {
-        const postData = await response.json()
-        setPost(postData)
+        const data = await response.json()
+        setPost(data.post)
+        setLikeCount(data.post.likes)
+        if (currentUser) {
+          setIsLiked(data.post.likedBy.some((like: PostLikeInfo) => like.userId === currentUser.id))
+        }
       } else {
-        setError('게시글을 찾을 수 없습니다.')
+        setPost(null)
       }
     } catch (error) {
       console.error('게시글 조회 오류:', error)
-      setError('게시글 조회 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)
     }
   }
 
-  const getCategoryName = (category: string) => {
-    const categories: { [key: string]: string } = {
-      general: '일반',
-      job_discussion: '취업 토론',
-      company_review: '회사 리뷰',
-      career_advice: '커리어 조언'
+  useEffect(() => {
+    fetchPost()
+  }, [postId, currentUser]) // Re-fetch if user logs in/out
+
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!comment.trim() || !currentUser) return
+
+    setCommentLoading(true)
+    try {
+      const response = await fetch(`/api/community/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: comment, authorId: currentUser.id }),
+      })
+      if (response.ok) {
+        setComment('')
+        fetchPost()
+      } else {
+        alert('댓글 작성에 실패했습니다.')
+      }
+    } catch (error) {
+      alert('댓글 작성 중 오류가 발생했습니다.')
+    } finally {
+      setCommentLoading(false)
     }
-    return categories[category] || category
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+  const handleLike = async () => {
+    if (!currentUser) {
+      alert('좋아요를 누르려면 로그인이 필요합니다.')
+      return
+    }
+    if (likeLoading) return
+
+    setLikeLoading(true)
+    try {
+      const response = await fetch(`/api/community/posts/${postId}/like`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id }),
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setLikeCount(data.likes)
+        setIsLiked(data.liked)
+      }
+    } catch (error) {
+      alert('좋아요 처리 중 오류가 발생했습니다.')
+    } finally {
+      setLikeLoading(false)
+    }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">게시글을 불러오는 중...</p>
-        </div>
-      </div>
-    )
-  }
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleString('ko-KR')
+  const getCategoryName = (category: string) => ({
+    general: '자유게시판',
+    job_discussion: '채용토론',
+    company_review: '회사리뷰',
+    career_advice: '커리어조언'
+  }[category] || category)
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={() => router.back()}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            돌아가기
-          </button>
-        </div>
-      </div>
-    )
+  if (loading || authLoading) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">게시글을 불러오는 중...</div>
   }
 
   if (!post) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">게시글이 존재하지 않습니다.</p>
-          <button
-            onClick={() => router.back()}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            돌아가기
-          </button>
-        </div>
-      </div>
-    )
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">게시글을 찾을 수 없습니다.</div>
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => router.back()}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <div className="flex-1">
-              <nav className="text-sm text-gray-500 mb-1">
-                <a href="/community" className="hover:text-gray-700">커뮤니티</a>
-                <span className="mx-2">›</span>
-                <span>{getCategoryName(post.category)}</span>
-              </nav>
-              <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>
-            </div>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>
         </div>
       </div>
 
-      {/* 게시글 내용 */}
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-sm">
-          {/* 게시글 헤더 */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-medium">
-                    {post.author.nickname.charAt(0)}
-                  </span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">{post.author.nickname}</p>
-                  <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4 text-sm text-gray-500">
-                <span>조회 {post.views}</span>
-                <span>댓글 {post._count.comments}</span>
-                <span>좋아요 {post.likes}</span>
-              </div>
-            </div>
-            
-            {/* 카테고리와 태그 */}
-            <div className="flex items-center space-x-3">
-              <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                {getCategoryName(post.category)}
-              </span>
-              {post.tags.map((tag, index) => (
-                <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded">
-                  #{tag}
-                </span>
-              ))}
-            </div>
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="border-b pb-4 mb-4">
+            <p>작성자: {post.author.nickname}</p>
+            <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
+            <p className="text-sm text-gray-500">조회수: {post.views}</p>
           </div>
-
-          {/* 게시글 본문 */}
-          <div className="p-6">
-            <div className="prose max-w-none">
-              <p className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-                {post.content}
-              </p>
-            </div>
-          </div>
-
-          {/* 액션 버튼 */}
-          <div className="p-6 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <button className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                  <span>좋아요 {post.likes}</span>
-                </button>
-                <button className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  <span>댓글 {post._count.comments}</span>
-                </button>
-              </div>
-              <button
-                onClick={() => router.push('/community')}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                목록으로
-              </button>
-            </div>
+          <div className="prose max-w-none whitespace-pre-wrap">{post.content}</div>
+          <div className="p-6 border-t flex justify-center mt-6">
+            <button 
+              onClick={handleLike}
+              disabled={likeLoading}
+              className={`px-6 py-2 border rounded-full flex items-center gap-2 transition-colors ${
+                isLiked 
+                ? 'bg-red-500 text-white border-red-500' 
+                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="w-5 h-5" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+              <span>좋아요 {likeCount}</span>
+            </button>
           </div>
         </div>
 
-        {/* 댓글 섹션 (향후 구현) */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">댓글</h3>
-          <div className="text-center text-gray-500 py-8">
-            <p>댓글 기능은 준비 중입니다.</p>
+        <div className="bg-white rounded-lg shadow-sm mt-8 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">댓글 ({post.comments.length})</h3>
+          
+          {currentUser ? (
+            <form onSubmit={handleCommentSubmit} className="mb-6">
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="댓글을 입력하세요"
+                className="w-full p-2 border rounded-lg"
+                rows={3}
+                disabled={commentLoading}
+              />
+              <button type="submit" disabled={commentLoading || !comment.trim()} className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50">
+                {commentLoading ? '등록 중...' : '댓글 등록'}
+              </button>
+            </form>
+          ) : (
+            <div className="text-center p-4 border rounded-lg bg-gray-50">
+              <p>댓글을 작성하려면 로그인이 필요합니다.</p>
+              <Link href="/login" className="text-blue-500 hover:underline">로그인하기</Link>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {post.comments.map((c) => (
+              <div key={c.id} className="border-t pt-4">
+                <p className="font-semibold">{c.author.nickname}</p>
+                <p className="text-sm text-gray-500">{formatDate(c.createdAt)}</p>
+                <p className="mt-2">{c.content}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>

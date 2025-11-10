@@ -1,182 +1,79 @@
 const puppeteer = require('puppeteer');
 
 async function crawlNaver() {
-  const browser = await puppeteer.launch({ 
-    headless: true,
-    args: [
-      '--no-sandbox', 
-      '--disable-setuid-sandbox',
-      '--disable-blink-features=AutomationControlled',
-      '--disable-features=VizDisplayCompositor'
-    ]
-  });
-  
+  let browser;
   try {
+    browser = await puppeteer.launch({
+      headless: "new",
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+    });
+
     const page = await browser.newPage();
-    
-    // 더 현실적인 User-Agent 설정
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
     
-    // 추가 헤더 설정
-    await page.setExtraHTTPHeaders({
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-      'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.8',
-      'Accept-Encoding': 'gzip, deflate, br'
-    });
-    
-    // 뷰포트 설정
-    await page.setViewport({ width: 1366, height: 768 });
-    
-    // 네이버 채용 API 엔드포인트 직접 호출
-    console.log('네이버 채용 API 접근 중...');
-    
-    // 먼저 메인 페이지 방문하여 세션 쿠키 획득
-    await page.goto('https://recruit.navercorp.com/', {
+    console.log('네이버 채용 사이트 접근 중...');
+    await page.goto('https://recruit.navercorp.com/rcrt/list.do', {
       waitUntil: 'domcontentloaded',
       timeout: 30000
     });
+    
+    // Wait for the correct container for job listings
+    await page.waitForSelector('ul.card_list', { timeout: 15000 });
 
-    // 페이지 로딩 대기
-    await page.waitForTimeout(3000);
-
-    // 실제 채용공고 페이지로 이동
-    await page.goto('https://recruit.navercorp.com/careers', {
-      waitUntil: 'domcontentloaded',
-      timeout: 30000
-    });
-
-    // 더 긴 대기 시간으로 페이지 완전 로드 기다리기
-    await page.waitForTimeout(5000);
-
-    // 채용공고 데이터 수집
     const jobs = await page.evaluate(() => {
       const jobList = [];
-      
-      // 다양한 셀렉터로 채용공고 요소 찾기
-      const possibleSelectors = [
-        '.career-item',
-        '.job-item', 
-        '.position-item',
-        '[data-testid*="job"]',
-        '[data-testid*="career"]',
-        '.list-item',
-        'article',
-        '.card'
-      ];
-      
-      let jobElements = [];
-      
-      // 가장 적합한 셀렉터 찾기
-      for (const selector of possibleSelectors) {
-        const elements = document.querySelectorAll(selector);
-        if (elements.length > 0) {
-          jobElements = elements;
-          console.log(`사용된 셀렉터: ${selector}, 찾은 요소 수: ${elements.length}`);
-          break;
-        }
-      }
-      
-      // 셀렉터로 찾지 못한 경우 직접 텍스트 기반으로 검색
-      if (jobElements.length === 0) {
-        const allElements = document.querySelectorAll('*');
-        allElements.forEach(el => {
-          const text = el.textContent || '';
-          if (text.includes('Frontend') || text.includes('Backend') || text.includes('개발자') || text.includes('Engineer')) {
-            // 너무 큰 컨테이너는 제외
-            if (text.length < 200 && el.children.length < 10) {
-              jobElements.push(el);
-            }
-          }
-        });
-      }
+      const jobElements = document.querySelectorAll('ul.card_list li.card_item');
 
-      // 중복 제거를 위한 Set
-      const seenTitles = new Set();
-
-      Array.from(jobElements).forEach(element => {
+      jobElements.forEach(item => {
         try {
-          // 제목 추출
-          let title = '';
-          const titleSelectors = [
-            'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-            '.title', '.job-title', '.position-title',
-            '[class*="title"]', '[class*="name"]',
-            'strong', 'b'
+          const titleElement = item.querySelector('h4.card_title');
+          const linkElement = item.querySelector('a.card_link');
+          const infoElements = item.querySelectorAll('dl.card_info dd.info_text');
+
+          if (!titleElement || !linkElement || infoElements.length < 4) return;
+
+          const title = titleElement.textContent.trim();
+          const onclickAttr = linkElement.getAttribute('onclick');
+          const annoIdMatch = onclickAttr.match(/show\('(\d+)'\)/);
+          if (!annoIdMatch) return;
+          
+          const annoId = annoIdMatch[1];
+          const url = `https://recruit.navercorp.com/rcrt/view.do?annoId=${annoId}`;
+
+          const department = infoElements[0]?.textContent.trim();
+          const jobField = infoElements[1]?.textContent.trim(); // Not always dev-related
+          const experience = infoElements[2]?.textContent.trim();
+          const jobType = infoElements[3]?.textContent.trim();
+          const deadline = infoElements[4]?.textContent.trim();
+
+          const devKeywords = [
+            'engineer', 'developer', '개발', '엔지니어', 'backend', 'frontend', 
+            'android', 'ios', 'sre', 'devops', 'ai', 'ml', 'data', 'graphics', 'security'
           ];
           
-          for (const selector of titleSelectors) {
-            const titleEl = element.querySelector(selector);
-            if (titleEl && titleEl.textContent.trim()) {
-              title = titleEl.textContent.trim();
-              break;
-            }
-          }
-          
-          // 요소 자체의 텍스트가 짧으면 그것을 제목으로 사용
-          if (!title && element.textContent && element.textContent.trim().length < 100) {
-            title = element.textContent.trim();
-          }
+          const isDevJob = devKeywords.some(keyword => 
+            title.toLowerCase().includes(keyword) || 
+            department.toLowerCase().includes(keyword) ||
+            jobField.toLowerCase().includes(keyword)
+          );
 
-          if (title && title.length > 2 && title.length < 100) {
-            // 불필요한 공백과 특수문자 정리
-            title = title.replace(/\s+/g, ' ').replace(/\n+/g, ' ').trim();
-            
-            // 개발 관련 키워드 확인
-            const developmentKeywords = [
-              'frontend', 'backend', 'fullstack', 'full-stack',
-              'developer', 'engineer', 'programming', 'software',
-              '개발', '엔지니어', '프로그래머', 'sw', '소프트웨어',
-              'android', 'ios', 'mobile', 'web', 'server',
-              'data', 'ai', 'ml', 'devops', 'infrastructure',
-              'security', 'embedded', 'graphics'
-            ];
-            
-            const isDevJob = developmentKeywords.some(keyword => 
-              title.toLowerCase().includes(keyword)
-            );
-
-            if (isDevJob && !seenTitles.has(title)) {
-              seenTitles.add(title);
-              
-              // 설명 추출
-              let description = '';
-              const descSelectors = ['.description', '.desc', '.content', 'p'];
-              for (const selector of descSelectors) {
-                const descEl = element.querySelector(selector);
-                if (descEl && descEl.textContent) {
-                  description = descEl.textContent.trim();
-                  break;
-                }
-              }
-              
-              // 링크 추출
-              const linkEl = element.querySelector('a[href]') || element.closest('a[href]');
-              let url = 'https://recruit.navercorp.com/';
-              if (linkEl) {
-                const href = linkEl.getAttribute('href');
-                if (href) {
-                  url = href.startsWith('http') ? href : `https://recruit.navercorp.com${href}`;
-                }
-              }
-
-              jobList.push({
-                title: title,
-                description: description.length > 500 ? description.substring(0, 500) + '...' : description,
-                location: '경기 성남시 분당구',
-                department: '개발부문', 
-                experience: '',
-                jobType: '정규직',
-                originalUrl: url,
-                company: 'naver',
-                postedAt: new Date().toISOString()
-              });
-            }
+          if (isDevJob) {
+            jobList.push({
+              title,
+              originalUrl: url,
+              company: 'naver',
+              jobType,
+              experience,
+              department,
+              postedAt: new Date().toISOString(), // The page doesn't show post date easily
+              description: `${title} @ ${department}`,
+              location: '경기 성남시', // Default
+            });
           }
-        } catch (err) {
-          console.error('개별 요소 파싱 오류:', err);
+        } catch (e) {
+          console.error('네이버 개별 채용공고 파싱 오류:', e.message);
         }
       });
-
       return jobList;
     });
 
@@ -184,10 +81,12 @@ async function crawlNaver() {
     return jobs;
 
   } catch (error) {
-    console.error('네이버 크롤링 오류:', error);
+    console.error('네이버 크롤링 중 심각한 오류 발생:', error.message);
     return [];
   } finally {
-    await browser.close();
+    if (browser) {
+      await browser.close();
+    }
   }
 }
 

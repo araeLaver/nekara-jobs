@@ -131,6 +131,7 @@ model User {
   // 커뮤니티 관련 관계
   posts            CommunityPost[]
   comments         CommunityComment[]
+  postLikes        PostLike[]
   
   @@map("users")
 }
@@ -214,7 +215,8 @@ model CommunityPost {
   
   author    User              @relation(fields: [authorId], references: [id])
   comments  CommunityComment[]
-  
+  likedBy   PostLike[]
+
   @@index([category])
   @@index([createdAt])
   @@index([authorId])
@@ -243,4 +245,17 @@ model CommunityComment {
   @@index([parentId])
   @@index([createdAt])
   @@map("community_comments")
+}
+
+// 게시글 좋아요 모델
+model PostLike {
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@map("post_likes")
 }

@@ -36,52 +36,31 @@ export const metadata = {
   metadataBase: new URL('https://devlunch.co.kr')
 }
 
+import { AuthProvider } from '@/context/AuthContext'
+
+// ... (keep existing imports)
+
+// ... (keep existing metadata)
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: 'DevLunch',
-    description: '개발자를 위한 채용 플랫폼',
-    url: 'https://devlunch.co.kr',
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: 'https://devlunch.co.kr/search?q={search_term_string}',
-      'query-input': 'required name=search_term_string'
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: 'DevLunch',
-      url: 'https://devlunch.co.kr'
-    }
-  }
+  // ... (keep existing jsonLd)
 
   return (
     <html lang="ko">
-      <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="author" content="네카라쿠배 채용" />
-        <meta name="geo.region" content="KR" />
-        <meta name="geo.country" content="Korea" />
-        <meta name="distribution" content="Global" />
-        <meta name="rating" content="General" />
-        <meta name="revisit-after" content="1 days" />
-        <link rel="canonical" href="https://devlunch.co.kr" />
-      </head>
+      {/* ... (keep head content) */}
       <body className={inter.className}>
-        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
-          <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
-        )}
-        <div className="min-h-screen bg-gray-50">
-          {children}
-        </div>
+        <AuthProvider>
+          {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+            <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+          )}
+          <div className="min-h-screen bg-gray-50">
+            {children}
+          </div>
+        </AuthProvider>
       </body>
     </html>
   )

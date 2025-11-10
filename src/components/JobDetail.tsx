@@ -82,21 +82,20 @@ export default function JobDetail({ jobId }: JobDetailProps) {
   }
 
   const handleApplyClick = () => {
-    const careerUrls: { [key: string]: string } = {
-      naver: 'https://recruit.navercorp.com/rcrt/list.do',
-      kakao: 'https://careers.kakao.com/jobs',
-      line: 'https://careers.linecorp.com/ko',
-      coupang: 'https://www.coupang.jobs/kr/',
-      baemin: 'https://career.woowahan.com/',
-      nexon: 'https://www.saramin.co.kr/zf_user/company-info/view-inner-recruit/csn/eFN2TGwybFErZHBza0Nkb09ld1B6UT09'
+    if (!job || !job.originalUrl) {
+      alert('데이터를 확인하여주세요. 채용공고 정보가 없습니다.')
+      return
     }
 
-    const careerUrl = job?.originalUrl || careerUrls[job?.company.name || '']
-    if (careerUrl && job) {
-      const companyDisplayName = getCompanyDisplayName(job.company.name)
-      if (confirm(`${companyDisplayName} 채용 페이지로 이동하여 지원하시겠습니까?`)) {
-        window.open(careerUrl, '_blank')
-      }
+    // originalUrl이 유효한지 확인
+    if (!job.originalUrl.startsWith('http')) {
+      alert('잘못된 URL입니다. 관리자에게 문의하세요.')
+      return
+    }
+
+    const companyDisplayName = getCompanyDisplayName(job.company.name)
+    if (confirm(`${companyDisplayName} 채용 페이지로 이동하여 지원하시겠습니까?\n\n실제 지원 페이지: ${job.originalUrl}`)) {
+      window.open(job.originalUrl, '_blank')
     }
   }
 
