@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { handleApiError, ValidationError } from '@/lib/errors'
+import { authenticateRequest } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,40 +31,62 @@ export async function GET(request: NextRequest) {
     })
     return NextResponse.json({ posts })
   } catch (error) {
-    console.error('Error fetching community posts:', error)
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 })
+    return handleApiError(error)
   }
 }
 
 // 2. POST: Create a new community post
 export async function POST(request: NextRequest) {
   try {
+    // 인증 확인
+    const user = await authenticateRequest(request)
+    if (!user) {
+      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+    }
+
     const body = await request.json()
-    const { title, content, category, tags, authorId } = body
+    const { title, content, category, tags } = body
 
-    if (!title || !content || !category || !authorId) {
-      return NextResponse.json({ error: '필수 항목이 누락되었습니다.' }, { status: 400 })
+    // 유효성 검사
+    if (!title || !content || !category) {
+      throw new ValidationError('제목, 내용, 카테고리는 필수입니다.')
     }
 
-    // Check if user exists
-    const userExists = await prisma.user.findUnique({ where: { id: authorId } })
-    if (!userExists) {
-      return NextResponse.json({ error: '존재하지 않는 사용자입니다.' }, { status: 404 })
+    if (title.length > 200) {
+      throw new ValidationError('제목은 200자를 초과할 수 없습니다.')
     }
 
+    if (content.length > 10000) {
+      throw new ValidationError('내용은 10,000자를 초과할 수 없습니다.')
+    }
+
+    const validCategories = ['general', 'job_discussion', 'company_review', 'career_advice']
+    if (!validCategories.includes(category)) {
+      throw new ValidationError('유효하지 않은 카테고리입니다.')
+    }
+
+    // 인증된 사용자 ID로 게시글 생성 (클라이언트의 authorId 무시)
     const newPost = await prisma.communityPost.create({
       data: {
         title,
         content,
         category,
-        tags,
-        authorId,
+        tags: tags || [],
+        authorId: user.id, // 인증된 사용자 ID 사용
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            nickname: true,
+            avatar: true,
+          },
+        },
       },
     })
 
     return NextResponse.json(newPost, { status: 201 })
   } catch (error) {
-    console.error('Error creating community post:', error)
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 })
+    return handleApiError(error)
   }
 }

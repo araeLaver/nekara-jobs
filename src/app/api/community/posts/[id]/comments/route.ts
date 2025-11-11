@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { handleApiError, ValidationError, UnauthorizedError } from '@/lib/errors'
+import { authenticateRequest } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,24 +12,26 @@ export async function POST(
 ) {
   try {
     const { id: postId } = params
-    const body = await request.json()
-    const { content, authorId } = body
 
-    if (!content || !authorId) {
-      return NextResponse.json({ error: '필수 항목이 누락되었습니다.' }, { status: 400 })
+    const user = await authenticateRequest(request)
+    if (!user) {
+      throw new UnauthorizedError()
     }
 
-    // Check if post and user exist in parallel
-    const [postExists, userExists] = await Promise.all([
-      prisma.communityPost.findUnique({ where: { id: postId } }),
-      prisma.user.findUnique({ where: { id: authorId } })
-    ]);
+    const body = await request.json()
+    const { content } = body
+
+    if (!content) {
+      throw new ValidationError('댓글 내용이 필수입니다.')
+    }
+
+    const authorId = user.id
+
+    // Check if post exists
+    const postExists = await prisma.communityPost.findUnique({ where: { id: postId } })
 
     if (!postExists) {
-      return NextResponse.json({ error: '존재하지 않는 게시글입니다.' }, { status: 404 })
-    }
-    if (!userExists) {
-      return NextResponse.json({ error: '존재하지 않는 사용자입니다.' }, { status: 404 })
+      throw new ValidationError('존재하지 않는 게시글입니다.')
     }
 
     const newComment = await prisma.communityComment.create({
@@ -51,7 +53,6 @@ export async function POST(
 
     return NextResponse.json(newComment, { status: 201 })
   } catch (error) {
-    console.error(`Error creating comment for post ${params.id}:`, error)
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 })
+    return handleApiError(error)
   }
 }

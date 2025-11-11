@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { handleApiError } from '@/lib/errors'
 
 export const dynamic = 'force-dynamic'
 
@@ -70,7 +69,6 @@ export async function GET(
 
     return NextResponse.json({ post })
   } catch (error) {
-    console.error(`Error fetching post ${params.id}:`, error)
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 })
+    return handleApiError(error)
   }
 }

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { handleApiError } from '@/lib/errors'
 
 export async function GET() {
   try {
@@ -62,10 +61,6 @@ export async function GET() {
     })
 
   } catch (error) {
-    console.error('Stats API Error:', error)
-    return NextResponse.json(
-      { error: '통계 조회 중 오류가 발생했습니다.' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }

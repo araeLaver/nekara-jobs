@@ -1,5 +1,7 @@
 'use client'
 
+import { COMPANIES, getCompanyColor } from '@/config/companies'
+
 interface CompanyTabsProps {
   activeCompany: string
   onCompanyChange: (company: string) => void
@@ -9,17 +11,7 @@ interface CompanyTabsProps {
 export default function CompanyTabs({ activeCompany, onCompanyChange, companyStats }: CompanyTabsProps) {
   const companies = [
     { id: '', name: '전체', color: 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 border-slate-700' },
-    { id: 'naver', name: '네이버', color: 'bg-green-900/30 text-green-300 hover:bg-green-800/40 border-green-700' },
-    { id: 'kakao', name: '카카오', color: 'bg-yellow-900/30 text-yellow-300 hover:bg-yellow-800/40 border-yellow-700' },
-    { id: 'line', name: '라인', color: 'bg-green-900/30 text-green-300 hover:bg-green-800/40 border-green-700' },
-    { id: 'coupang', name: '쿠팡', color: 'bg-orange-900/30 text-orange-300 hover:bg-orange-800/40 border-orange-700' },
-    { id: 'baemin', name: '배달의민족', color: 'bg-teal-900/30 text-teal-300 hover:bg-teal-800/40 border-teal-700' },
-    { id: 'toss', name: '토스', color: 'bg-blue-900/30 text-blue-300 hover:bg-blue-800/40 border-blue-700' },
-    { id: 'carrot', name: '당근마켓', color: 'bg-orange-900/30 text-orange-300 hover:bg-orange-800/40 border-orange-700' },
-    { id: 'krafton', name: '크래프톤', color: 'bg-purple-900/30 text-purple-300 hover:bg-purple-800/40 border-purple-700' },
-    { id: 'nexon', name: '넥슨', color: 'bg-red-900/30 text-red-300 hover:bg-red-800/40 border-red-700' },
-    { id: 'zigbang', name: '직방', color: 'bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/40 border-indigo-700' },
-    { id: 'bucketplace', name: '오늘의집', color: 'bg-pink-900/30 text-pink-300 hover:bg-pink-800/40 border-pink-700' },
+    ...COMPANIES.map(c => ({ id: c.id, name: c.name, color: c.color }))
   ]
 
   const getCompanyCount = (companyId: string) => {

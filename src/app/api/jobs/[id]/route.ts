@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { handleApiError, NotFoundError, ValidationError } from '@/lib/errors'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,10 +12,7 @@ export async function GET(
     const jobId = params.id
 
     if (!jobId) {
-      return NextResponse.json(
-        { error: '채용공고 ID가 필요합니다.' },
-        { status: 400 }
-      )
+      throw new ValidationError('채용공고 ID가 필요합니다.')
     }
 
     // 먼저 실제 데이터베이스에서 조회 시도
@@ -1000,10 +996,6 @@ LINE 광고 플랫폼의 매력:
     return NextResponse.json(defaultJob)
 
   } catch (error) {
-    console.error('Job Detail API Error:', error)
-    return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }

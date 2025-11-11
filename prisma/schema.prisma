@@ -34,17 +34,25 @@ model Job {
   updatedAt   DateTime @updatedAt
   isActive    Boolean  @default(true)
   originalUrl String   @unique
-  
+
   companyId   String
   company     Company  @relation(fields: [companyId], references: [id])
-  
+
   tags        JobTag[]
   views       JobView[]
 
+  // 단일 인덱스
   @@index([companyId])
   @@index([postedAt])
   @@index([isActive])
   @@index([title])
+
+  // 복합 인덱스 (자주 함께 사용되는 필드)
+  @@index([companyId, isActive, postedAt])
+  @@index([isActive, postedAt])
+  @@index([location, isActive])
+  @@index([department, isActive])
+
   @@map("jobs")
 }
 

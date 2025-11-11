@@ -151,10 +151,10 @@ async function crawlToss() {
 
     console.log(`토스에서 ${jobs.length}개 채용공고 기본 정보 수집 완료`);
     
-    // 상세 내용 크롤링 (처음 10개만)
+    // 상세 내용 크롤링 (모든 공고)
     const detailedJobs = [];
-    const jobsToDetail = jobs.slice(0, Math.min(10, jobs.length));
-    
+    const jobsToDetail = jobs; // 모든 공고 크롤링으로 변경
+
     console.log(`토스 ${jobsToDetail.length}개 채용공고 상세 내용 수집 중...`);
     
     for (const job of jobsToDetail) {

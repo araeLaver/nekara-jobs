@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { handleApiError, UnauthorizedError } from '@/lib/errors'
+import { authenticateRequest } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,12 +11,13 @@ export async function POST(
 ) {
   try {
     const { id: postId } = params
-    const body = await request.json()
-    const { userId } = body
 
-    if (!userId) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+    const user = await authenticateRequest(request)
+    if (!user) {
+      throw new UnauthorizedError()
     }
+
+    const userId = user.id
 
     const result = await prisma.$transaction(async (tx) => {
       const existingLike = await tx.postLike.findUnique({
@@ -69,7 +70,6 @@ export async function POST(
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error(`Error liking post ${params.id}:`, error)
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 })
+    return handleApiError(error)
   }
 }

@@ -2,89 +2,129 @@
 
 const { PrismaClient } = require('@prisma/client');
 const WorkingCrawlers = require('./working-crawlers');
+const { validateJobBatch, generateQualityReport } = require('./validators');
 
 const prisma = new PrismaClient();
 
 async function saveJobsToDatabase(jobs, companyName) {
+  const startTime = Date.now();
+
   try {
-    // 회사 정보 확인/생성
-    let company = await prisma.company.findUnique({
-      where: { name: companyName }
+    // 회사 정보 확인/생성 (upsert 사용)
+    // Note: Node.js에서는 .ts import가 직접 안되므로, 간소화된 매핑 사용
+    const companyInfo = {
+      naver: { nameEn: 'NAVER', logo: null },
+      kakao: { nameEn: 'Kakao', logo: null },
+      line: { nameEn: 'LINE', logo: null },
+      toss: { nameEn: 'Toss', logo: null },
+      baemin: { nameEn: 'Woowa Brothers', logo: null },
+      nexon: { nameEn: 'NEXON', logo: null }
+    };
+    // TODO: src/config/companies.ts와 동기화 필요
+
+    const company = await prisma.company.upsert({
+      where: { name: companyName },
+      update: {},
+      create: {
+        name: companyName,
+        nameEn: companyInfo[companyName]?.nameEn || companyName,
+        logo: companyInfo[companyName]?.logo
+      }
     });
 
-    if (!company) {
-      const companyInfo = {
-        naver: { nameEn: 'NAVER', logo: null },
-        kakao: { nameEn: 'Kakao', logo: null },
-        line: { nameEn: 'LINE', logo: null },
-        toss: { nameEn: 'Toss', logo: null },
-        baemin: { nameEn: 'Woowa Brothers', logo: null },
-        nexon: { nameEn: 'NEXON', logo: null }
+    // 데이터 검증 수행
+    const validationResult = validateJobBatch(jobs);
+    const qualityReport = generateQualityReport(validationResult);
+
+    console.log(`📊 ${companyName} 데이터 품질: ${qualityReport.qualityScore.toFixed(1)}%`);
+
+    if (validationResult.valid.length === 0) {
+      console.log(`⚠️ ${companyName}: 유효한 채용공고 없음`);
+      return { saved: 0, updated: 0 };
+    }
+
+    const validJobs = validationResult.valid;
+
+    // 기존 채용공고 조회 (한 번의 쿼리로)
+    const existingJobs = await prisma.job.findMany({
+      where: {
+        originalUrl: {
+          in: validJobs.map(job => job.originalUrl)
+        }
+      },
+      select: {
+        id: true,
+        originalUrl: true
+      }
+    });
+
+    const existingUrlMap = new Map(existingJobs.map(job => [job.originalUrl, job.id]));
+
+    // 신규와 업데이트 분리
+    const newJobs = [];
+    const updateJobs = [];
+
+    for (const job of validJobs) {
+      const jobData = {
+        title: job.title,
+        description: job.description || '',
+        location: job.location || '서울',
+        department: job.department || '',
+        jobType: job.jobType || '정규직',
+        experience: job.experience || '경력무관',
+        salary: job.salary || null,
+        originalUrl: job.originalUrl,
+        postedAt: job.postedAt ? new Date(job.postedAt) : new Date(),
+        deadline: job.deadline ? new Date(job.deadline) : null,
+        companyId: company.id,
+        isActive: true
       };
 
-      company = await prisma.company.create({
-        data: {
-          name: companyName,
-          nameEn: companyInfo[companyName]?.nameEn || companyName,
-          logo: companyInfo[companyName]?.logo
-        }
-      });
-      console.log(`✅ 회사 생성: ${companyName}`);
-    }
-
-    let savedCount = 0;
-    let updatedCount = 0;
-
-    // 채용공고 저장
-    for (const job of jobs) {
-      // 유효성 검사
-      if (!job.title || !job.originalUrl) {
-        console.log(`⚠️ 건너뛰기 (필수 정보 누락): ${job.title || 'No title'}`);
-        continue;
-      }
-
-      // URL 중복 확인
-      const existingJob = await prisma.job.findUnique({
-        where: { originalUrl: job.originalUrl }
-      });
-
-      if (!existingJob) {
-        await prisma.job.create({
-          data: {
-            title: job.title,
-            description: job.description || '',
-            location: job.location || '서울',
-            department: job.department || '',
-            jobType: job.jobType || '정규직',
-            experience: job.experience || '경력무관',
-            salary: job.salary || null,
-            originalUrl: job.originalUrl,
-            postedAt: job.postedAt ? new Date(job.postedAt) : new Date(),
-            deadline: job.deadline ? new Date(job.deadline) : null,
-            companyId: company.id,
-            isActive: true
-          }
+      if (existingUrlMap.has(job.originalUrl)) {
+        updateJobs.push({
+          id: existingUrlMap.get(job.originalUrl),
+          data: jobData
         });
-        savedCount++;
       } else {
-        // 기존 채용공고 업데이트
-        await prisma.job.update({
-          where: { id: existingJob.id },
-          data: {
-            description: job.description || existingJob.description,
-            location: job.location || existingJob.location,
-            department: job.department || existingJob.department,
-            jobType: job.jobType || existingJob.jobType,
-            experience: job.experience || existingJob.experience,
-            isActive: true,
-            updatedAt: new Date()
-          }
-        });
-        updatedCount++;
+        newJobs.push(jobData);
       }
     }
 
-    console.log(`✅ ${companyName}: 신규 ${savedCount}개, 업데이트 ${updatedCount}개`);
+    // Bulk 삽입 (신규)
+    let savedCount = 0;
+    if (newJobs.length > 0) {
+      await prisma.job.createMany({
+        data: newJobs,
+        skipDuplicates: true
+      });
+      savedCount = newJobs.length;
+    }
+
+    // Bulk 업데이트 (기존) - transaction 사용
+    let updatedCount = 0;
+    if (updateJobs.length > 0) {
+      await prisma.$transaction(
+        updateJobs.map(({ id, data }) =>
+          prisma.job.update({
+            where: { id },
+            data: {
+              description: data.description,
+              location: data.location,
+              department: data.department,
+              jobType: data.jobType,
+              experience: data.experience,
+              isActive: true,
+              updatedAt: new Date()
+            }
+          })
+        )
+      );
+      updatedCount = updateJobs.length;
+    }
+
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`✅ ${companyName}: 신규 ${savedCount}개, 업데이트 ${updatedCount}개 (${duration}초)`);
+
     return { saved: savedCount, updated: updatedCount };
   } catch (error) {
     console.error(`❌ ${companyName} DB 저장 오류:`, error);

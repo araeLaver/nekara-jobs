@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Search, Filter, X } from 'lucide-react'
 
@@ -16,8 +16,48 @@ interface FilterBarProps {
   companies: Array<{ company: string; count: number }>
 }
 
+interface FilterOptions {
+  departments: string[]
+  locations: string[]
+  jobTypes: string[]
+  experiences: string[]
+}
+
 export default function FilterBar({ filters, onFilterChange, companies }: FilterBarProps) {
   const [localFilters, setLocalFilters] = useState(filters)
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    departments: ['전체'],
+    locations: ['전체'],
+    jobTypes: ['전체'],
+    experiences: ['전체']
+  })
+  const [isLoading, setIsLoading] = useState(true)
+
+  // 필터 옵션 로드
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const response = await fetch('/api/filters/options')
+        if (response.ok) {
+          const data = await response.json()
+          setFilterOptions(data)
+        }
+      } catch (error) {
+        console.error('필터 옵션 로드 실패:', error)
+        // 실패 시 기본값 사용
+        setFilterOptions({
+          departments: ['전체', '개발', '기획', '디자인', '마케팅', '영업', '기타'],
+          locations: ['전체', '서울', '경기', '부산', '대구', '인천', '원격'],
+          jobTypes: ['전체', '정규직', '계약직', '인턴'],
+          experiences: ['전체', '신입', '경력', '무관']
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchFilterOptions()
+  }, [])
 
   const handleInputChange = (key: string, value: string) => {
     const newFilters = { ...localFilters, [key]: value }
@@ -31,9 +71,7 @@ export default function FilterBar({ filters, onFilterChange, companies }: Filter
     onFilterChange(clearedFilters)
   }
 
-  const jobTypes = ['정규직', '계약직', '인턴', '신입', '경력']
-  const locations = ['서울', '경기', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '제주']
-  const departments = ['개발', '프론트엔드', '백엔드', '풀스택', 'iOS', 'Android', '데이터', 'AI/ML', '인프라/DevOps', 'QA', '보안', '게임', '블록체인']
+  // 동적 필터 옵션 사용 (하드코딩 제거)
 
   return (
     <motion.div 
@@ -86,9 +124,10 @@ export default function FilterBar({ filters, onFilterChange, companies }: Filter
             value={localFilters.location}
             onChange={(e) => handleInputChange('location', e.target.value)}
             className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
+            disabled={isLoading}
           >
             <option value="">전체 지역</option>
-            {locations.map((location) => (
+            {filterOptions.locations.filter(loc => loc !== '전체').map((location) => (
               <option key={location} value={location}>
                 {location}
               </option>
@@ -105,9 +144,10 @@ export default function FilterBar({ filters, onFilterChange, companies }: Filter
             value={localFilters.department}
             onChange={(e) => handleInputChange('department', e.target.value)}
             className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
+            disabled={isLoading}
           >
             <option value="">전체 직무</option>
-            {departments.map((dept) => (
+            {filterOptions.departments.filter(dept => dept !== '전체').map((dept) => (
               <option key={dept} value={dept}>
                 {dept}
               </option>
@@ -124,9 +164,10 @@ export default function FilterBar({ filters, onFilterChange, companies }: Filter
             value={localFilters.jobType}
             onChange={(e) => handleInputChange('jobType', e.target.value)}
             className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
+            disabled={isLoading}
           >
             <option value="">전체 형태</option>
-            {jobTypes.map((type) => (
+            {filterOptions.jobTypes.filter(type => type !== '전체').map((type) => (
               <option key={type} value={type}>
                 {type}
               </option>

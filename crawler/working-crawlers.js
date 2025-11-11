@@ -20,23 +20,26 @@ class WorkingCrawlers {
   }
 
   async crawlAll() {
-    console.log('🚀 검증된 크롤러만 실행 중...');
-    const results = [];
+    console.log('🚀 검증된 크롤러 병렬 실행 중...');
 
-    for (const crawler of this.crawlers) {
+    // 병렬로 모든 크롤러 실행
+    const crawlerPromises = this.crawlers.map(async (crawler) => {
       try {
-        console.log(`📊 ${crawler.name} 크롤링 중...`);
+        console.log(`📊 ${crawler.name} 크롤링 시작...`);
+        const startTime = Date.now();
         const jobs = await crawler.fn();
-        results.push({ company: crawler.name, jobs, count: jobs.length });
-        console.log(`✅ ${crawler.name}: ${jobs.length}개 채용공고 수집`);
+        const duration = ((Date.now() - startTime) / 1000).toFixed(2);
 
-        // 요청 간격 조절
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        console.log(`✅ ${crawler.name}: ${jobs.length}개 채용공고 수집 (${duration}초)`);
+        return { company: crawler.name, jobs, count: jobs.length };
       } catch (error) {
         console.error(`❌ ${crawler.name} 크롤링 실패:`, error.message);
-        results.push({ company: crawler.name, jobs: [], error: error.message });
+        return { company: crawler.name, jobs: [], count: 0, error: error.message };
       }
-    }
+    });
+
+    // 모든 크롤러가 완료될 때까지 대기
+    const results = await Promise.all(crawlerPromises);
 
     const totalJobs = results.reduce((sum, result) => sum + result.jobs.length, 0);
     console.log(`🎉 크롤링 완료! 총 ${totalJobs}개 채용공고 수집`);

@@ -25,12 +25,15 @@
 ```
 nekara-jobs/
 ├── .github/workflows/      # GitHub Actions CI 워크플로우
-├── src/                    # Next.js 프론트엔드
-│   ├── app/               # App Router (API 라우트 포함)
+├── src/
+│   ├── app/               # Next.js App Router
+│   │   └── api/          # API 라우트
 │   ├── components/        # React 컴포넌트
-│   └── context/           # React Context (인증 등)
+│   ├── context/           # React Context (인증)
+│   └── lib/              # 유틸리티 (Prisma, 인증, 에러)
 ├── crawler/              # 채용정보 크롤러
-├── prisma/               # 데이터베이스 스키마 및 마이그레이션
+├── prisma/               # DB 스키마 및 마이그레이션
+├── scripts/              # DB 관리 스크립트
 └── ...
 ```
 
@@ -52,12 +55,18 @@ npm run db:reset -- --force
 
 ### 3. 환경 변수 설정
 `.env.example` 파일을 복사하여 `.env` 파일을 만들고 다음 내용을 설정하세요:
+```bash
+cp .env.example .env
+```
+
+`.env` 파일 수정:
 ```env
 # PostgreSQL 연결 URL
 DATABASE_URL="postgresql://user:password@host:port/database"
 
-# Vercel Cron Job 실행을 위한 시크릿 키 (임의의 문자열)
-CRON_SECRET="your-super-secret-key"
+# Vercel Cron Job 보안 키 (아래 명령어로 생성 권장)
+# openssl rand -base64 32
+CRON_SECRET="your-random-secret-key-here"
 ```
 
 ### 4. 개발 서버 실행

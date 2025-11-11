@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { ExternalLink, MapPin, Clock, Briefcase } from 'lucide-react'
+import { getCompanyDisplayName } from '@/config/companies'
 
 interface Job {
   id: string
@@ -73,22 +74,7 @@ export default function JobList({ jobs, loading, currentPage, totalPages, onPage
     return 'text-green-600'
   }
 
-  const getCompanyDisplayName = (companyName: string) => {
-    const nameMap: { [key: string]: string } = {
-      naver: '네이버',
-      kakao: '카카오',
-      line: '라인',
-      coupang: '쿠팡',
-      baemin: '배달의민족',
-      carrot: '당근',
-      nexon: '넥슨',
-      krafton: '크래프톤',
-      toss: '토스',
-      bucketplace: '오늘의집',
-      zigbang: '직방'
-    }
-    return nameMap[companyName] || companyName
-  }
+  // getCompanyDisplayName은 이제 @/config/companies에서 import
 
   const handleJobClick = (job: Job) => {
     window.location.href = `/jobs/${job.id}`

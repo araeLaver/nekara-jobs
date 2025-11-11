@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import JobList from '@/components/JobList'
 import FilterBar from '@/components/FilterBar'
 import CompanyTabs from '@/components/CompanyTabs'
@@ -38,17 +39,23 @@ interface JobSearchContainerProps {
 }
 
 export default function JobSearchContainer({ initialJobs, initialTotalPages, initialStats }: JobSearchContainerProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [jobs, setJobs] = useState<Job[]>(initialJobs)
   const [stats] = useState<Stats>(initialStats)
   const [loading, setLoading] = useState(false) // Initial load is done by server
+
+  // URL에서 필터 초기값 가져오기
   const [filters, setFilters] = useState({
-    company: '',
-    location: '',
-    jobType: '',
-    search: '',
-    department: ''
+    company: searchParams.get('company') || '',
+    location: searchParams.get('location') || '',
+    jobType: searchParams.get('jobType') || '',
+    search: searchParams.get('search') || '',
+    department: searchParams.get('department') || ''
   })
-  const [currentPage, setCurrentPage] = useState(1)
+
+  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'))
   const [totalPages, setTotalPages] = useState(initialTotalPages)
 
   const fetchJobs = async (page = 1, currentFilters = filters) => {
@@ -89,30 +96,55 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
     }
   }, [filters])
 
+  // URL 업데이트 함수
+  const updateURL = (newFilters: typeof filters, page: number = 1) => {
+    const params = new URLSearchParams()
+
+    // 비어있지 않은 필터만 URL에 추가
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value) {
+        params.set(key, value)
+      }
+    })
+
+    if (page > 1) {
+      params.set('page', page.toString())
+    }
+
+    const newURL = params.toString() ? `/?${params.toString()}` : '/'
+    router.push(newURL, { scroll: false })
+  }
+
   const handleFilterChange = (newFilters: typeof filters) => {
     setCurrentPage(1)
     setFilters(newFilters)
+    updateURL(newFilters, 1)
   }
 
   const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    updateURL(filters, page)
     fetchJobs(page)
   }
-  
+
   const handleCompanyChange = (company: string) => {
-    const newFilters = { ...filters, company };
-    setFilters(newFilters);
-    setCurrentPage(1);
+    const newFilters = { ...filters, company }
+    setFilters(newFilters)
+    setCurrentPage(1)
+    updateURL(newFilters, 1)
   }
 
   const handleHeroSearch = (query: string) => {
-    setFilters({
+    const newFilters = {
       company: '',
       location: '',
       jobType: '',
       search: query,
       department: ''
-    })
+    }
+    setFilters(newFilters)
     setCurrentPage(1)
+    updateURL(newFilters, 1)
   }
 
   return (
