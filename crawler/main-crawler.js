@@ -10,36 +10,56 @@ async function saveJobsToDatabase(jobs, companyName) {
   const startTime = Date.now();
 
   try {
-    // 회사 정보 확인/생성 (upsert 사용)
-    // Note: Node.js에서는 .ts import가 직접 안되므로, 간소화된 매핑 사용
-    const companyInfo = {
-      naver: { nameEn: 'NAVER', logo: null },
-      kakao: { nameEn: 'Kakao', logo: null },
-      line: { nameEn: 'LINE', logo: null },
-      toss: { nameEn: 'Toss', logo: null },
-      baemin: { nameEn: 'Woowa Brothers', logo: null },
-      nexon: { nameEn: 'NEXON', logo: null }
+    // 회사 이름 정규화
+    const normalizedCompanyName = companyName.toLowerCase();
+    const companyNameMap = {
+      'naver': 'NAVER',
+      'kakao': 'Kakao',
+      'line': 'LINE',
+      'toss': 'Toss',
+      'baemin': 'Woowa Brothers',
+      'nexon': 'NEXON',
+      'coupang': 'Coupang',
+      'woowa brothers': 'Woowa Brothers'
     };
-    // TODO: src/config/companies.ts와 동기화 필요
+
+    const displayName = companyNameMap[normalizedCompanyName] || companyName;
+
+    // 회사 정보 확인/생성 (upsert 사용)
+    const companyInfo = {
+      NAVER: { nameEn: 'NAVER', logo: null },
+      Kakao: { nameEn: 'Kakao', logo: null },
+      LINE: { nameEn: 'LINE', logo: null },
+      Toss: { nameEn: 'Toss', logo: null },
+      'Woowa Brothers': { nameEn: 'Woowa Brothers', logo: null },
+      NEXON: { nameEn: 'NEXON', logo: null },
+      Coupang: { nameEn: 'Coupang', logo: null }
+    };
 
     const company = await prisma.company.upsert({
-      where: { name: companyName },
+      where: { name: displayName },
       update: {},
       create: {
-        name: companyName,
-        nameEn: companyInfo[companyName]?.nameEn || companyName,
-        logo: companyInfo[companyName]?.logo
+        name: displayName,
+        nameEn: companyInfo[displayName]?.nameEn || displayName,
+        logo: companyInfo[displayName]?.logo
       }
     });
 
+    // 크롤링된 데이터에 companyId 추가
+    const jobsWithCompanyId = jobs.map(job => ({
+      ...job,
+      companyId: company.id
+    }));
+
     // 데이터 검증 수행
-    const validationResult = validateJobBatch(jobs);
+    const validationResult = validateJobBatch(jobsWithCompanyId);
     const qualityReport = generateQualityReport(validationResult);
 
-    console.log(`📊 ${companyName} 데이터 품질: ${qualityReport.qualityScore.toFixed(1)}%`);
+    console.log(`📊 ${displayName} 데이터 품질: ${qualityReport.qualityScore.toFixed(1)}%`);
 
     if (validationResult.valid.length === 0) {
-      console.log(`⚠️ ${companyName}: 유효한 채용공고 없음`);
+      console.log(`⚠️ ${displayName}: 유효한 채용공고 없음`);
       return { saved: 0, updated: 0 };
     }
 
@@ -123,7 +143,7 @@ async function saveJobsToDatabase(jobs, companyName) {
     }
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.log(`✅ ${companyName}: 신규 ${savedCount}개, 업데이트 ${updatedCount}개 (${duration}초)`);
+    console.log(`✅ ${displayName}: 신규 ${savedCount}개, 업데이트 ${updatedCount}개 (${duration}초)`);
 
     return { saved: savedCount, updated: updatedCount };
   } catch (error) {
