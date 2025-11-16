@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jobService } from '@/services/job.service'
 import { handleApiError } from '@/lib/errors'
+import { rateLimit, apiRateLimits } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +12,9 @@ export const dynamic = 'force-dynamic'
  * Service Layer를 사용하여 비즈니스 로직을 분리했습니다.
  */
 export async function GET(request: NextRequest) {
+  // Rate limiting 적용
+  const rateLimitResult = await rateLimit(apiRateLimits.jobs)(request)
+  if (rateLimitResult) return rateLimitResult
   try {
     const searchParams = request.nextUrl.searchParams
 

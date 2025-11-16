@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { handleApiError, ValidationError } from '@/lib/errors'
 import { authenticateRequest } from '@/lib/auth'
+import { rateLimit, apiRateLimits } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
 // 1. GET: Fetch all community posts
 export async function GET(request: NextRequest) {
+  // Rate limiting 적용
+  const rateLimitResult = await rateLimit(apiRateLimits.community)(request)
+  if (rateLimitResult) return rateLimitResult
   try {
     const posts = await prisma.communityPost.findMany({
       where: { isActive: true },
@@ -37,6 +41,10 @@ export async function GET(request: NextRequest) {
 
 // 2. POST: Create a new community post
 export async function POST(request: NextRequest) {
+  // Rate limiting 적용 (POST는 더 엄격하게)
+  const rateLimitResult = await rateLimit({ interval: 60 * 1000, limit: 10 })(request)
+  if (rateLimitResult) return rateLimitResult
+
   try {
     // 인증 확인
     const user = await authenticateRequest(request)

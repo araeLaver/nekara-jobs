@@ -1,6 +1,12 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
+import { validateEnv } from '@/lib/env'
+
+// 서버 시작 시 환경변수 검증 (서버 컴포넌트에서만 실행)
+if (typeof window === 'undefined') {
+  validateEnv()
+}
 
 const inter = Inter({ subsets: ['latin'] })
 

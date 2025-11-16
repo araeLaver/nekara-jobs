@@ -4,13 +4,18 @@ import { main as runCrawlers } from '../../../../crawler/main-crawler'
 
 export async function GET(request: NextRequest) {
   try {
-    // Vercel Cron Job authentication
-    const authHeader = request.headers.get('authorization')
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Vercel Cron Job authentication - Fail-closed approach
+    if (!process.env.CRON_SECRET) {
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
     }
 
-    console.log('✅ Starting scheduled job update via Vercel Cron...')
+    const authHeader = request.headers.get('authorization')
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     // The main-crawler.js script already contains all the logic for
     // crawling, saving, and updating jobs. We just need to invoke it.

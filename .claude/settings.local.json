@@ -44,7 +44,11 @@
       "WebFetch(domain:career.woowahan.com)",
       "WebFetch(domain:localhost)",
       "WebFetch(domain:kakaopay.career.greetinghr.com)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(npm run crawler:*)",
+      "Bash(npx next:*)",
+      "Bash(npm run lint)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": [],

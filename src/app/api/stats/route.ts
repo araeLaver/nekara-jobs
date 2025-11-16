@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { handleApiError } from '@/lib/errors'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 300 // 5분마다 재검증
+
 export async function GET() {
   try {
     // 7일 전 날짜
@@ -58,6 +61,10 @@ export async function GET() {
       totalCompanies,
       recentJobs,
       jobsByCompany: companiesWithJobs
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
     })
 
   } catch (error) {

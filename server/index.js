@@ -15,8 +15,29 @@ const wsServer = new WebSocketServer(server);
 // 스케줄러 초기화
 const scheduler = new JobScheduler(wsServer);
 
-app.use(cors());
-app.use(express.json());
+// CORS 설정 - 보안 강화
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:4000', 'http://localhost:3000'];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Request body 크기 제한 (DoS 방지)
+app.use(express.json({ limit: '10mb' }));
 
 // 채용공고 목록 조회 (페이지네이션, 필터링, 검색)
 app.get('/api/jobs', async (req, res) => {
@@ -195,8 +216,10 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// 크롤링 결과를 데이터베이스에 저장하는 함수
-async function saveJobsToDatabase(jobs, companyName) {
+// DEPRECATED: 크롤링 결과를 데이터베이스에 저장하는 함수
+// 이 함수는 N+1 쿼리 문제가 있어 사용되지 않습니다.
+// crawler/main-crawler.js의 bulk operation을 사용하세요.
+async function saveJobsToDatabase_DEPRECATED(jobs, companyName) {
   try {
     // 회사 정보 확인/생성
     let company = await prisma.company.findUnique({
