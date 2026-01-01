@@ -5,8 +5,10 @@
  */
 
 import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
+import { Prisma, Job, Company } from '@prisma/client' // Add Company import
 import { NotFoundError, ValidationError } from '@/lib/errors'
+
+export type JobWithCompany = Job & { company: { id: string; name: string; nameEn: string | null; logo: string | null; } } // Define a new type for Job with included Company
 
 export interface JobFilters {
   company?: string
@@ -33,7 +35,7 @@ export class JobService {
   /**
    * 채용공고 목록 조회
    */
-  async getJobs(filters: JobFilters = {}, pagination: PaginationOptions = {}) {
+  async getJobs(filters: JobFilters = {}, pagination: PaginationOptions = {}): Promise<{ jobs: JobWithCompany[]; pagination: PaginationResult }> {
     const page = Math.max(1, pagination.page || 1)
     const limit = Math.min(100, Math.max(1, pagination.limit || 20))
     const skip = (page - 1) * limit
@@ -55,8 +57,7 @@ export class JobService {
           }
         },
         orderBy: [
-          { postedAt: 'desc' },
-          { createdAt: 'desc' }
+          { postedAt: 'desc' }
         ],
         skip,
         take: limit

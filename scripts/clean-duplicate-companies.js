@@ -7,17 +7,28 @@ async function cleanDuplicateCompanies() {
   try {
     console.log('🧹 중복 회사 데이터 정리 시작...\n');
 
-    // 회사 이름 표준화 매핑
+    // 회사 이름 표준화 매핑 (소문자/별칭 -> 공식 명칭)
     const companyMapping = {
-      'Toss': 'toss',
-      'Kakao': 'kakao',
-      'NEXON': 'nexon',
-      'Coupang': 'coupang',
-      'NAVER': 'naver',
-      'LINE': 'line'
+      'toss': 'Toss',
+      'kakao': 'Kakao',
+      'nexon': 'NEXON',
+      'coupang': 'Coupang',
+      'naver': 'NAVER',
+      'line': 'LINE',
+      'baemin': 'Woowa Brothers',
+      'woowa brothers': 'Woowa Brothers', // Ensure casing consistency
+      'zigbang': 'Zigbang',
+      'bucketplace': 'Bucketplace',
+      'krafton': 'KRAFTON',
+      'carrot': ' 당근마켓 (Karrot)'
     };
 
+    // Define official names to ensure they exist or are targeted correctly
+    const officialNames = new Set(Object.values(companyMapping));
+
     for (const [oldName, newName] of Object.entries(companyMapping)) {
+      if (oldName === newName) continue; // Skip self-mapping
+
       const oldCompany = await prisma.company.findUnique({
         where: { name: oldName }
       });
@@ -46,7 +57,11 @@ async function cleanDuplicateCompanies() {
         console.log(`📝 ${oldName} → ${newName} 이름 변경...`);
         await prisma.company.update({
           where: { id: oldCompany.id },
-          data: { name: newName }
+          data: { 
+            name: newName,
+            // Update nameEn if it was using the old lowercase name
+            nameEn: newName 
+          }
         });
         console.log(`✅ 이름 변경 완료`);
       }

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 // We will import the main function from the working crawler
-import { main as runCrawlers } from '../../../../crawler/main-crawler'
+import { main as runCrawlers } from '../../../../../crawler/main-crawler'
+
+export const dynamic = 'force-dynamic' // Added to prevent static rendering warnings
 
 export async function GET(request: NextRequest) {
   try {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { jobService } from '@/services/job.service'
+import { jobService, JobWithCompany } from '@/services/job.service' // JobWithCompany import
 import { handleApiError } from '@/lib/errors'
 import { rateLimit, apiRateLimits } from '@/lib/rate-limit'
 
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const result = await jobService.getJobs(filters, pagination)
 
     // 응답 형식 변환
-    const formattedJobs = result.jobs.map(job => ({
+    const formattedJobs = result.jobs.map((job: JobWithCompany) => ({ // Explicitly cast job
       id: job.id,
       title: job.title,
       location: job.location || '',

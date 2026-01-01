@@ -3,8 +3,20 @@
 const { PrismaClient } = require('@prisma/client');
 const WorkingCrawlers = require('./working-crawlers');
 const { validateJobBatch, generateQualityReport } = require('./validators');
+const fs = require('fs'); // Import fs module
+const path = require('path'); // Import path module
 
 const prisma = new PrismaClient();
+
+// 로그 파일 경로 설정
+const logFilePath = path.join(__dirname, 'crawler-log.txt');
+
+// 크롤링 결과 로그 기록 함수
+function logCrawlerResult(status, message, details = {}) {
+  const timestamp = new Date().toISOString();
+  const logEntry = `[${timestamp}] [${status.toUpperCase()}] ${message} ${JSON.stringify(details)}\n`;
+  fs.appendFileSync(logFilePath, logEntry, 'utf8');
+}
 
 async function saveJobsToDatabase(jobs, companyName) {
   const startTime = Date.now();
@@ -20,7 +32,11 @@ async function saveJobsToDatabase(jobs, companyName) {
       'baemin': 'Woowa Brothers',
       'nexon': 'NEXON',
       'coupang': 'Coupang',
-      'woowa brothers': 'Woowa Brothers'
+      'woowa brothers': 'Woowa Brothers',
+      'zigbang': 'Zigbang', // Added for consistency
+      'bucketplace': 'Bucketplace', // Added for consistency
+      'krafton': 'KRAFTON', // Added for consistency
+      'carrot': ' 당근마켓 (Karrot)' // Added for consistency
     };
 
     const displayName = companyNameMap[normalizedCompanyName] || companyName;
@@ -33,12 +49,19 @@ async function saveJobsToDatabase(jobs, companyName) {
       Toss: { nameEn: 'Toss', logo: null },
       'Woowa Brothers': { nameEn: 'Woowa Brothers', logo: null },
       NEXON: { nameEn: 'NEXON', logo: null },
-      Coupang: { nameEn: 'Coupang', logo: null }
+      Coupang: { nameEn: 'Coupang', logo: null },
+      Zigbang: { nameEn: 'Zigbang', logo: null }, // Added
+      Bucketplace: { nameEn: 'Bucketplace', logo: null }, // Added
+      KRAFTON: { nameEn: 'KRAFTON', logo: null }, // Added
+      ' 당근마켓 (Karrot)': { nameEn: 'Karrot', logo: null } // Added
     };
 
     const company = await prisma.company.upsert({
       where: { name: displayName },
-      update: {},
+      update: {
+        nameEn: companyInfo[displayName]?.nameEn || displayName, // Update nameEn and logo on subsequent runs
+        logo: companyInfo[displayName]?.logo
+      },
       create: {
         name: displayName,
         nameEn: companyInfo[displayName]?.nameEn || displayName,
@@ -60,6 +83,7 @@ async function saveJobsToDatabase(jobs, companyName) {
 
     if (validationResult.valid.length === 0) {
       console.log(`⚠️ ${displayName}: 유효한 채용공고 없음`);
+      logCrawlerResult('warn', `${displayName}: 유효한 채용공고 없음`, { company: displayName });
       return { saved: 0, updated: 0 };
     }
 
@@ -144,10 +168,17 @@ async function saveJobsToDatabase(jobs, companyName) {
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`✅ ${displayName}: 신규 ${savedCount}개, 업데이트 ${updatedCount}개 (${duration}초)`);
+    logCrawlerResult('info', `${displayName} DB 저장 완료`, {
+      company: displayName,
+      saved: savedCount,
+      updated: updatedCount,
+      duration: `${duration}s`
+    });
 
     return { saved: savedCount, updated: updatedCount };
   } catch (error) {
     console.error(`❌ ${companyName} DB 저장 오류:`, error);
+    logCrawlerResult('error', `${companyName} DB 저장 실패`, { error: error.message });
     throw error;
   }
 }
@@ -155,6 +186,7 @@ async function saveJobsToDatabase(jobs, companyName) {
 async function main() {
   try {
     console.log('🚀 실제 채용공고 크롤링 시작...\n');
+    logCrawlerResult('info', '크롤링 시작');
 
     const crawler = new WorkingCrawlers();
     const results = await crawler.crawlAll();
@@ -169,6 +201,9 @@ async function main() {
         const { saved, updated } = await saveJobsToDatabase(result.jobs, result.company);
         totalSaved += saved;
         totalUpdated += updated;
+      } else {
+        console.log(`⚠️ ${result.company}: 크롤링된 공고 없음`);
+        logCrawlerResult('warn', `${result.company}: 크롤링된 공고 없음`, { company: result.company });
       }
     }
 
@@ -176,6 +211,12 @@ async function main() {
     console.log(`신규 저장: ${totalSaved}개`);
     console.log(`업데이트: ${totalUpdated}개`);
     console.log(`총 처리: ${totalSaved + totalUpdated}개`);
+    logCrawlerResult('success', '크롤링 최종 완료', {
+      totalSaved,
+      totalUpdated,
+      totalProcessed: totalSaved + totalUpdated
+    });
+
 
     // 통계 조회
     const stats = await prisma.company.findMany({
@@ -194,6 +235,9 @@ async function main() {
 
   } catch (error) {
     console.error('크롤링 실패:', error);
+    logCrawlerResult('error', '크롤링 프로세스 실패', { error: error.message, stack: error.stack });
+    // 가상 Slack 알림
+    console.error('🚨 [Slack Alert] 크롤링 프로세스 실패! 상세 로그를 확인하세요.');
   } finally {
     await prisma.$disconnect();
   }

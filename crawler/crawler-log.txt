@@ -1,0 +1,8 @@
+[2026-01-01T13:08:50.178Z] [INFO] 크롤링 시작 {}
+[2026-01-01T13:17:15.011Z] [INFO] Kakao DB 저장 완료 {"company":"Kakao","saved":13,"updated":6,"duration":"2.11s"}
+[2026-01-01T13:17:30.440Z] [INFO] Toss DB 저장 완료 {"company":"Toss","saved":82,"updated":196,"duration":"15.43s"}
+[2026-01-01T13:17:31.335Z] [INFO] NEXON DB 저장 완료 {"company":"NEXON","saved":0,"updated":6,"duration":"0.89s"}
+[2026-01-01T13:17:31.868Z] [INFO] NAVER DB 저장 완료 {"company":"NAVER","saved":4,"updated":0,"duration":"0.53s"}
+[2026-01-01T13:17:34.261Z] [INFO] LINE DB 저장 완료 {"company":"LINE","saved":14,"updated":23,"duration":"2.39s"}
+[2026-01-01T13:17:35.789Z] [INFO] Woowa Brothers DB 저장 완료 {"company":"Woowa Brothers","saved":1,"updated":11,"duration":"1.52s"}
+[2026-01-01T13:17:35.790Z] [SUCCESS] 크롤링 최종 완료 {"totalSaved":114,"totalUpdated":242,"totalProcessed":356}

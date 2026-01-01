@@ -11,12 +11,14 @@ import HeroSection from './HeroSection'
 interface Job {
   id: string;
   title: string;
-  location: string;
-  department: string;
-  jobType: string;
-  experience: string;
+  description: string | null; // Added
+  location: string | null;
+  department: string | null;
+  jobType: string | null;
+  experience: string | null;
   postedAt: string;
   deadline?: string | null;
+  isActive: boolean; // Added
   originalUrl: string;
   company: {
     id: string;

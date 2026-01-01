@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
+import { useQuery } from '@tanstack/react-query' // Import useQuery
 
 interface CommunityPost {
   id: string
@@ -33,41 +34,33 @@ interface ChatRoom {
 }
 
 export default function CommunityPage() {
-  const [posts, setPosts] = useState<CommunityPost[]>([])
-  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([])
-  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'posts' | 'chat'>('posts')
 
-  useEffect(() => {
-    fetchPosts()
-    fetchChatRooms()
-  }, [])
-
-  const fetchPosts = async () => {
-    try {
+  // TanStack Query for fetching posts
+  const { data: posts, isLoading: postsLoading, isError: postsError } = useQuery<CommunityPost[]>({
+    queryKey: ['communityPosts'],
+    queryFn: async () => {
       const response = await fetch('/api/community/posts')
-      if (response.ok) {
-        const data = await response.json()
-        setPosts(data.posts || [])
+      if (!response.ok) {
+        throw new Error('Failed to fetch posts')
       }
-    } catch (error) {
-      console.error('게시글 조회 실패:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+      const data = await response.json()
+      return data.posts || []
+    },
+  })
 
-  const fetchChatRooms = async () => {
-    try {
+  // TanStack Query for fetching chat rooms
+  const { data: chatRooms, isLoading: chatRoomsLoading, isError: chatRoomsError } = useQuery<ChatRoom[]>({
+    queryKey: ['chatRooms'],
+    queryFn: async () => {
       const response = await fetch('/api/chat/rooms')
-      if (response.ok) {
-        const data = await response.json()
-        setChatRooms(data.rooms || [])
+      if (!response.ok) {
+        throw new Error('Failed to fetch chat rooms')
       }
-    } catch (error) {
-      console.error('채팅방 조회 실패:', error)
-    }
-  }
+      const data = await response.json()
+      return data.rooms || []
+    },
+  })
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -101,12 +94,22 @@ export default function CommunityPage() {
     return colorMap[category] || 'bg-gray-100 text-gray-800'
   }
 
-  if (loading) {
+  if (postsLoading || chatRoomsLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-gray-600">커뮤니티를 불러오는 중...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (postsError || chatRoomsError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 text-lg">데이터를 불러오는 중 오류가 발생했습니다.</p>
         </div>
       </div>
     )
@@ -179,7 +182,7 @@ export default function CommunityPage() {
                 <h2 className="text-xl font-semibold text-gray-900">최근 게시글</h2>
               </div>
               
-              {posts.length === 0 ? (
+              {(posts || []).length === 0 ? ( // Use posts || [] for safety
                 <div className="p-8 text-center">
                   <div className="text-gray-400 text-6xl mb-4">📝</div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -197,7 +200,7 @@ export default function CommunityPage() {
                 </div>
               ) : (
                 <div className="divide-y">
-                  {posts.map((post) => (
+                  {(posts || []).map((post) => ( // Use posts || [] for safety
                     <Link
                       key={post.id}
                       href={`/community/posts/${post.id}`}
@@ -249,7 +252,7 @@ export default function CommunityPage() {
                 <h2 className="text-xl font-semibold text-gray-900">활성 채팅방</h2>
               </div>
               
-              {chatRooms.length === 0 ? (
+              {(chatRooms || []).length === 0 ? ( // Use chatRooms || [] for safety
                 <div className="p-8 text-center">
                   <div className="text-gray-400 text-6xl mb-4">💬</div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -267,7 +270,7 @@ export default function CommunityPage() {
                 </div>
               ) : (
                 <div className="divide-y">
-                  {chatRooms.map((room) => (
+                  {(chatRooms || []).map((room) => ( // Use chatRooms || [] for safety
                     <Link
                       key={room.id}
                       href={`/chat/rooms/${room.id}`}

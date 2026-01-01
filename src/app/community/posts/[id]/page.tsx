@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import { User, CommunityPost, CommunityComment } from '@prisma/client'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query' // Import TanStack Query hooks
 
 // Define more specific types for the page
 type CommentWithAuthor = CommunityComment & { author: User }
@@ -17,93 +18,129 @@ type PostWithDetails = CommunityPost & {
 
 export default function PostDetailPage() {
   const params = useParams()
-  const { id: postId } = params
-  const { currentUser, loading: authLoading } = useAuth()
+  const { id: postId } = params as { id: string } // Ensure postId is string
+  const { currentUser } = useAuth()
+  const queryClient = useQueryClient() // Get QueryClient instance
 
-  const [post, setPost] = useState<PostWithDetails | null>(null)
-  const [loading, setLoading] = useState(true)
   const [comment, setComment] = useState('')
-  const [commentLoading, setCommentLoading] = useState(false)
   
-  // Like state
+  // Fetch post details using useQuery
+  const { data: post, isLoading, isError } = useQuery<PostWithDetails>({
+    queryKey: ['communityPost', postId],
+    queryFn: async () => {
+      const response = await fetch(`/api/community/posts/${postId}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch post')
+      }
+      const data = await response.json()
+      return data.post
+    },
+    enabled: !!postId, // Only run query if postId is available
+  })
+
+  // Prepare initial like state based on fetched post
   const [isLiked, setIsLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
-  const [likeLoading, setLikeLoading] = useState(false)
-
-  const fetchPost = async () => {
-    if (!postId) return
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/community/posts/${postId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setPost(data.post)
-        setLikeCount(data.post.likes)
-        if (currentUser) {
-          setIsLiked(data.post.likedBy.some((like: PostLikeInfo) => like.userId === currentUser.id))
-        }
-      } else {
-        setPost(null)
-      }
-    } catch (error) {
-      console.error('게시글 조회 오류:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   useEffect(() => {
-    fetchPost()
-  }, [postId, currentUser]) // Re-fetch if user logs in/out
+    if (post) {
+      setLikeCount(post.likedBy.length)
+      if (currentUser) {
+        setIsLiked(post.likedBy.some((like: PostLikeInfo) => like.userId === currentUser.id))
+      }
+    }
+  }, [post, currentUser])
 
-  const handleCommentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!comment.trim() || !currentUser) return
-
-    setCommentLoading(true)
-    try {
+  // Mutation for adding a comment
+  const addCommentMutation = useMutation({
+    mutationFn: async ({ content, authorId }: { content: string; authorId: string }) => {
       const response = await fetch(`/api/community/posts/${postId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: comment, authorId: currentUser.id }),
+        body: JSON.stringify({ content, authorId }),
       })
-      if (response.ok) {
-        setComment('')
-        fetchPost()
-      } else {
-        alert('댓글 작성에 실패했습니다.')
+      if (!response.ok) {
+        throw new Error('Failed to add comment')
       }
-    } catch (error) {
-      alert('댓글 작성 중 오류가 발생했습니다.')
-    } finally {
-      setCommentLoading(false)
-    }
+      return response.json()
+    },
+    onSuccess: () => {
+      setComment('')
+      queryClient.invalidateQueries({ queryKey: ['communityPost', postId] }) // Invalidate to refetch post with new comment
+    },
+    onError: () => {
+      alert('댓글 작성에 실패했습니다.')
+    },
+  })
+
+  const handleCommentSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!comment.trim() || !currentUser || addCommentMutation.isPending) return
+
+    addCommentMutation.mutate({ content: comment, authorId: currentUser.id })
   }
 
-  const handleLike = async () => {
+  // Mutation for liking/unliking a post with optimistic update
+  const likeMutation = useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      const response = await fetch(`/api/community/posts/${postId}/like`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      })
+      if (!response.ok) {
+        throw new Error('Failed to toggle like')
+      }
+      return response.json()
+    },
+    onMutate: async () => {
+      // Optimistically update the UI
+      const previousPost = queryClient.getQueryData<PostWithDetails>(['communityPost', postId])
+      if (previousPost) {
+        // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+        await queryClient.cancelQueries({ queryKey: ['communityPost', postId] })
+
+        // Snapshot the previous value
+        const snapshot = previousPost
+
+        // Optimistically update to the new value
+        const newLikedBy = isLiked
+          ? previousPost.likedBy.filter(like => like.userId !== currentUser?.id)
+          : [...previousPost.likedBy, { userId: currentUser!.id }]
+        
+        queryClient.setQueryData<PostWithDetails>(['communityPost', postId], {
+          ...previousPost,
+          likedBy: newLikedBy,
+          likes: newLikedBy.length,
+        })
+        setLikeCount(newLikedBy.length)
+        setIsLiked(!isLiked)
+
+        return { snapshot }
+      }
+      return { snapshot: undefined }
+    },
+    onError: (err, variables, context) => {
+      // If the mutation fails, use the context for a rollback
+      alert('좋아요 처리 중 오류가 발생했습니다.')
+      if (context?.snapshot) {
+        queryClient.setQueryData<PostWithDetails>(['communityPost', postId], context.snapshot)
+        setLikeCount(context.snapshot.likedBy.length)
+        setIsLiked(context.snapshot.likedBy.some(like => like.userId === currentUser?.id))
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success:
+      queryClient.invalidateQueries({ queryKey: ['communityPost', postId] })
+    },
+  })
+
+  const handleLike = () => {
     if (!currentUser) {
       alert('좋아요를 누르려면 로그인이 필요합니다.')
       return
     }
-    if (likeLoading) return
-
-    setLikeLoading(true)
-    try {
-      const response = await fetch(`/api/community/posts/${postId}/like`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser.id }),
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setLikeCount(data.likes)
-        setIsLiked(data.liked)
-      }
-    } catch (error) {
-      alert('좋아요 처리 중 오류가 발생했습니다.')
-    } finally {
-      setLikeLoading(false)
-    }
+    likeMutation.mutate({ userId: currentUser.id })
   }
 
   const formatDate = (dateString: string) => new Date(dateString).toLocaleString('ko-KR')
@@ -114,11 +151,11 @@ export default function PostDetailPage() {
     career_advice: '커리어조언'
   }[category] || category)
 
-  if (loading || authLoading) {
+  if (isLoading || likeMutation.isPending) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">게시글을 불러오는 중...</div>
   }
 
-  if (!post) {
+  if (isError || !post) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">게시글을 찾을 수 없습니다.</div>
   }
 
@@ -134,14 +171,14 @@ export default function PostDetailPage() {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="border-b pb-4 mb-4">
             <p>작성자: {post.author.nickname}</p>
-            <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
+            <p className="text-sm text-gray-500">{formatDate(post.createdAt.toISOString())}</p>
             <p className="text-sm text-gray-500">조회수: {post.views}</p>
           </div>
           <div className="prose max-w-none whitespace-pre-wrap">{post.content}</div>
           <div className="p-6 border-t flex justify-center mt-6">
             <button 
               onClick={handleLike}
-              disabled={likeLoading}
+              disabled={likeMutation.isPending}
               className={`px-6 py-2 border rounded-full flex items-center gap-2 transition-colors ${
                 isLiked 
                 ? 'bg-red-500 text-white border-red-500' 
@@ -167,10 +204,10 @@ export default function PostDetailPage() {
                 placeholder="댓글을 입력하세요"
                 className="w-full p-2 border rounded-lg"
                 rows={3}
-                disabled={commentLoading}
+                disabled={addCommentMutation.isPending}
               />
-              <button type="submit" disabled={commentLoading || !comment.trim()} className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50">
-                {commentLoading ? '등록 중...' : '댓글 등록'}
+              <button type="submit" disabled={addCommentMutation.isPending || !comment.trim()} className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50">
+                {addCommentMutation.isPending ? '등록 중...' : '댓글 등록'}
               </button>
             </form>
           ) : (
@@ -184,7 +221,7 @@ export default function PostDetailPage() {
             {post.comments.map((c) => (
               <div key={c.id} className="border-t pt-4">
                 <p className="font-semibold">{c.author.nickname}</p>
-                <p className="text-sm text-gray-500">{formatDate(c.createdAt)}</p>
+                <p className="text-sm text-gray-500">{formatDate(c.createdAt.toISOString())}</p>
                 <p className="mt-2">{c.content}</p>
               </div>
             ))}

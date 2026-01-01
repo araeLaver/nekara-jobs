@@ -7,20 +7,20 @@ import { getCompanyDisplayName } from '@/config/companies'
 interface Job {
   id: string
   title: string
-  description: string
-  location: string
-  department: string
-  jobType: string
-  experience: string
+  description: string | null // Modified
+  location: string | null // Modified
+  department: string | null // Modified
+  jobType: string | null // Modified
+  experience: string | null // Modified
   postedAt: string
-  deadline?: string
+  deadline?: string | null
   isActive: boolean
   originalUrl: string
   company: {
     id: string
     name: string
-    nameEn: string
-    logo?: string
+    nameEn: string | null // Modified
+    logo?: string | null // Modified
   }
   tags: string[]
 }

@@ -2,6 +2,8 @@ import Header from '@/components/Header'
 import JobSearchContainer from '@/components/JobSearchContainer'
 import { PrismaClient } from '@prisma/client'
 
+export const revalidate = 3600; // Revalidate the page every hour (3600 seconds)
+
 const prisma = new PrismaClient()
 
 // Re-usable function to fetch stats. Could be moved to a lib file.
