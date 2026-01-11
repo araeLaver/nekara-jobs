@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { motion } from 'framer-motion'
 import { Search, Filter, X } from 'lucide-react'
 
@@ -23,7 +23,7 @@ interface FilterOptions {
   experiences: string[]
 }
 
-export default function FilterBar({ filters, onFilterChange, companies }: FilterBarProps) {
+function FilterBar({ filters, onFilterChange, companies }: FilterBarProps) {
   const [localFilters, setLocalFilters] = useState(filters)
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     departments: ['전체'],
@@ -236,3 +236,5 @@ export default function FilterBar({ filters, onFilterChange, companies }: Filter
     </motion.div>
   )
 }
+
+export default memo(FilterBar)

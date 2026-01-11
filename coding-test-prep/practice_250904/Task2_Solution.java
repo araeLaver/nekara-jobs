@@ -1,12 +1,19 @@
 import java.util.Map;
 import java.util.TreeMap;
 
+/**
+ * A robust URL Builder implementing the Fluent API pattern.
+ * Features:
+ * - Automatic query parameter sorting (using TreeMap).
+ * - Smart path handling (prevents double slashes).
+ * - Standard port handling (omits 80 for http, 443 for https).
+ */
 public class UrlBuilder {
     private String scheme = "http";
     private String host = "";
     private int port = -1;
     private String path = "";
-    private Map<String, String> queryParams = new TreeMap<>(); // TreeMap for sorted keys
+    private Map<String, String> queryParams = new TreeMap<>(); // TreeMap ensures consistent parameter order
 
     public UrlBuilder https() {
         this.scheme = "https";
@@ -41,11 +48,18 @@ public class UrlBuilder {
         url.append(scheme).append("://");
         url.append(host);
 
+        // Append port only if it's non-standard
         if (port != -1) {
-            url.append(":").append(port);
+            boolean isStandardHttp = "http".equals(scheme) && port == 80;
+            boolean isStandardHttps = "https".equals(scheme) && port == 443;
+            
+            if (!isStandardHttp && !isStandardHttps) {
+                url.append(":").append(port);
+            }
         }
 
         if (path != null && !path.isEmpty()) {
+            // Ensure path starts with exactly one '/'
             if (!path.startsWith("/")) {
                 url.append("/");
             }
@@ -65,10 +79,5 @@ public class UrlBuilder {
         }
 
         return url.toString();
-    }
-    
-    // Test logic similar to the original file
-    public static void main(String[] args) {
-        System.out.println(new UrlBuilder().host("codility.com").https().port(8080).build());
     }
 }

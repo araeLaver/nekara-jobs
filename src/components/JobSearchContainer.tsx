@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import JobList from '@/components/JobList'
 import FilterBar from '@/components/FilterBar'
@@ -46,7 +46,8 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
 
   const [jobs, setJobs] = useState<Job[]>(initialJobs)
   const [stats] = useState<Stats>(initialStats)
-  const [loading, setLoading] = useState(false) // Initial load is done by server
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null) // Added error state
 
   // URL에서 필터 초기값 가져오기
   const [filters, setFilters] = useState({
@@ -63,6 +64,7 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
   const fetchJobs = async (page = 1, currentFilters = filters) => {
     try {
       setLoading(true)
+      setError(null) // Reset error on new fetch
       const queryParams = new URLSearchParams({
         page: page.toString(),
         limit: '20',
@@ -70,17 +72,23 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
       })
 
       const response = await fetch(`/api/jobs?${queryParams}`)
+      
+      if (response.status === 429) {
+        throw new Error('요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.')
+      }
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error('데이터를 불러오는 중 오류가 발생했습니다.')
       }
       
       const data = await response.json()
       setJobs(data.jobs || [])
       setTotalPages(data.pagination?.pages || 1)
       setCurrentPage(page)
-    } catch (error) {
+    } catch (error: any) {
       console.error('채용공고 조회 실패:', error)
-      setJobs([])
+      setError(error.message || '오류가 발생했습니다.')
+      setJobs([]) // Clear jobs on error to avoid stale data display
     } finally {
       setLoading(false)
     }
@@ -99,7 +107,7 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
   }, [filters])
 
   // URL 업데이트 함수
-  const updateURL = (newFilters: typeof filters, page: number = 1) => {
+  const updateURL = useCallback((newFilters: typeof filters, page: number = 1) => {
     const params = new URLSearchParams()
 
     // 비어있지 않은 필터만 URL에 추가
@@ -115,28 +123,71 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
 
     const newURL = params.toString() ? `/?${params.toString()}` : '/'
     router.push(newURL, { scroll: false })
-  }
+  }, [router])
 
-  const handleFilterChange = (newFilters: typeof filters) => {
+  const fetchJobs = useCallback(async (page = 1, currentFilters = filters) => {
+    try {
+      setLoading(true)
+      setError(null) // Reset error on new fetch
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: '20',
+        ...Object.fromEntries(Object.entries(currentFilters).filter(([_, v]) => v))
+      })
+
+      const response = await fetch(`/api/jobs?${queryParams}`)
+      
+      if (response.status === 429) {
+        throw new Error('요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.')
+      }
+      
+      if (!response.ok) {
+        throw new Error('데이터를 불러오는 중 오류가 발생했습니다.')
+      }
+      
+      const data = await response.json()
+      setJobs(data.jobs || [])
+      setTotalPages(data.pagination?.pages || 1)
+      setCurrentPage(page)
+    } catch (error: any) {
+      console.error('채용공고 조회 실패:', error)
+      setError(error.message || '오류가 발생했습니다.')
+      setJobs([]) // Clear jobs on error to avoid stale data display
+    } finally {
+      setLoading(false)
+    }
+  }, []) // Remove 'filters' dependency if we pass 'currentFilters' argument. But default arg uses 'filters'.
+         // To make it fully stable, let's remove default arg dependency or include it.
+         // Actually, simpler: fetchJobs depends on nothing if we always pass args.
+         // But the existing code calls fetchJobs(1) without filters.
+         // Let's keep it simple: Include 'filters' in deps for now to be safe, OR refactor calls.
+         // Better: make fetchJobs accept filters explicitly in all calls or use ref.
+         // For now, let's add 'filters' to deps to avoid stale closure, but that defeats the purpose if 'filters' changes often.
+         // Correct patterns: use a ref for current filters or pass them explicitly.
+         // Let's pass them explicitly in the handlers below.
+
+  const handleFilterChange = useCallback((newFilters: typeof filters) => {
     setCurrentPage(1)
     setFilters(newFilters)
     updateURL(newFilters, 1)
-  }
+    fetchJobs(1, newFilters)
+  }, [updateURL, fetchJobs])
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page)
     updateURL(filters, page)
-    fetchJobs(page)
-  }
+    fetchJobs(page, filters)
+  }, [filters, updateURL, fetchJobs])
 
-  const handleCompanyChange = (company: string) => {
+  const handleCompanyChange = useCallback((company: string) => {
     const newFilters = { ...filters, company }
     setFilters(newFilters)
     setCurrentPage(1)
     updateURL(newFilters, 1)
-  }
+    fetchJobs(1, newFilters)
+  }, [filters, updateURL, fetchJobs])
 
-  const handleHeroSearch = (query: string) => {
+  const handleHeroSearch = useCallback((query: string) => {
     const newFilters = {
       company: '',
       location: '',
@@ -147,7 +198,8 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
     setFilters(newFilters)
     setCurrentPage(1)
     updateURL(newFilters, 1)
-  }
+    fetchJobs(1, newFilters)
+  }, [updateURL, fetchJobs])
 
   return (
     <>
@@ -171,6 +223,14 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
           onFilterChange={handleFilterChange}
           companies={stats?.jobsByCompany || []}
         />
+
+        {/* 에러 메시지 표시 */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <p className="font-semibold">오류 발생</p>
+            <p>{error}</p>
+          </div>
+        )}
 
         {/* 채용공고 리스트 */}
         <JobList

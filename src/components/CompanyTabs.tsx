@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { COMPANIES, getCompanyColor } from '@/config/companies'
 
 interface CompanyTabsProps {
@@ -8,7 +9,7 @@ interface CompanyTabsProps {
   companyStats: Array<{ company: string; count: number }>
 }
 
-export default function CompanyTabs({ activeCompany, onCompanyChange, companyStats }: CompanyTabsProps) {
+function CompanyTabs({ activeCompany, onCompanyChange, companyStats }: CompanyTabsProps) {
   const companies = [
     { id: '', name: '전체', color: 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 border-slate-700' },
     ...COMPANIES.map(c => ({ id: c.id, name: c.name, color: c.color }))
@@ -53,3 +54,5 @@ export default function CompanyTabs({ activeCompany, onCompanyChange, companySta
     </div>
   )
 }
+
+export default memo(CompanyTabs)

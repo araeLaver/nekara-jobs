@@ -27,16 +27,21 @@ interface Job {
 
 interface JobDetailProps {
   jobId: string
+  initialJob?: Job | null // Added optional initialJob
 }
 
-export default function JobDetail({ jobId }: JobDetailProps) {
-  const [job, setJob] = useState<Job | null>(null)
-  const [loading, setLoading] = useState(true)
+export default function JobDetail({ jobId, initialJob }: JobDetailProps) {
+  const [job, setJob] = useState<Job | null>(initialJob || null)
+  const [loading, setLoading] = useState(!initialJob) // Load only if no initial data
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // 이미 데이터가 있으면 페칭 스킵
+    if (initialJob) return
+
     const fetchJob = async () => {
       try {
+        setLoading(true)
         const response = await fetch(`/api/jobs/${jobId}`)
         if (!response.ok) {
           throw new Error('채용공고를 찾을 수 없습니다.')
@@ -53,7 +58,7 @@ export default function JobDetail({ jobId }: JobDetailProps) {
     if (jobId) {
       fetchJob()
     }
-  }, [jobId])
+  }, [jobId, initialJob])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

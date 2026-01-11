@@ -1,7 +1,7 @@
-import { JobService } from '@/services/job.service' // Import JobService
+import { jobService } from '@/services/job.service' // Import singleton
 import Header from '@/components/Header'
 import JobDetail from '@/components/JobDetail'
-import { Metadata } from 'next' // Import Metadata type
+import { Metadata } from 'next'
 
 interface JobDetailPageProps {
   params: { id: string }
@@ -10,10 +10,9 @@ interface JobDetailPageProps {
 // Generate dynamic metadata for each job post
 export async function generateMetadata({ params }: JobDetailPageProps): Promise<Metadata> {
   const jobId = params.id
-  const jobService = new JobService() // Instantiate JobService
-
+  
   try {
-    const job = await jobService.getJobById(jobId) // Fetch job details
+    const job = await jobService.getJobById(jobId)
 
     if (!job) {
       return {
@@ -37,7 +36,7 @@ export async function generateMetadata({ params }: JobDetailPageProps): Promise<
         type: 'article',
         images: [
           {
-            url: job.company.logo || 'https://devlunch.co.kr/default-og-image.jpg', // Default OG image
+            url: job.company.logo || 'https://devlunch.co.kr/default-og-image.jpg',
             alt: `${job.company.name} 로고`,
           },
         ],
@@ -58,12 +57,28 @@ export async function generateMetadata({ params }: JobDetailPageProps): Promise<
   }
 }
 
-export default function JobDetailPage({ params }: JobDetailPageProps) {
+export default async function JobDetailPage({ params }: JobDetailPageProps) {
+  let initialJob = null
+
+  try {
+    const jobData = await jobService.getJobById(params.id)
+    
+    if (jobData) {
+      // Serialize Date objects to strings for Client Component
+      initialJob = {
+        ...jobData,
+        postedAt: jobData.postedAt.toISOString(),
+        deadline: jobData.deadline ? jobData.deadline.toISOString() : null,
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch job details:', error)
+  }
 
   return (
     <div className="min-h-screen bg-slate-900">
       <Header />
-      <JobDetail jobId={params.id as string} />
+      <JobDetail jobId={params.id} initialJob={initialJob} />
     </div>
   )
 }

@@ -1,12 +1,74 @@
 import { NextRequest } from 'next/server'
 import { User } from '@prisma/client'
 import { prisma } from './prisma'
+import { createHmac, timingSafeEqual } from 'crypto'
 
-// JWT 대신 간단한 세션 토큰 방식 사용 (향후 JWT로 업그레이드 가능)
+// Secret key for signing tokens. In production, this MUST be set in environment variables.
+const SECRET_KEY = process.env.NEXTAUTH_SECRET || 'dev-secret-key-change-this-in-prod'
+
 export interface AuthSession {
   userId: string
   username: string
   email?: string | null
+}
+
+/**
+ * Generates a secure token with HMAC signature.
+ * Format: base64(userId).timestamp.signature
+ */
+export function signToken(userId: string): string {
+  const timestamp = Date.now().toString()
+  const userIdB64 = Buffer.from(userId).toString('base64')
+  const payload = `${userIdB64}.${timestamp}`
+  
+  const signature = createHmac('sha256', SECRET_KEY)
+    .update(payload)
+    .digest('base64url') // Use base64url for URL safety
+
+  return `${payload}.${signature}`
+}
+
+/**
+ * Verifies the token signature and expiration.
+ * Returns userId if valid, null otherwise.
+ */
+export function verifyToken(token: string): string | null {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+
+    const [userIdB64, timestamp, signature] = parts
+    const payload = `${userIdB64}.${timestamp}`
+
+    // 1. Verify Signature
+    const expectedSignature = createHmac('sha256', SECRET_KEY)
+      .update(payload)
+      .digest('base64url')
+
+    const signatureBuffer = Buffer.from(signature)
+    const expectedBuffer = Buffer.from(expectedSignature)
+
+    if (signatureBuffer.length !== expectedBuffer.length || 
+        !timingSafeEqual(signatureBuffer, expectedBuffer)) {
+      return null
+    }
+
+    // 2. Verify Expiration (e.g., 7 days)
+    const tokenTime = parseInt(timestamp, 10)
+    const now = Date.now()
+    const maxAge = 7 * 24 * 60 * 60 * 1000 // 7 days
+
+    if (isNaN(tokenTime) || now - tokenTime > maxAge) {
+      return null
+    }
+
+    // 3. Decode userId
+    const userId = Buffer.from(userIdB64, 'base64').toString('utf-8')
+    return userId
+  } catch (error) {
+    console.error('Token verification failed:', error)
+    return null
+  }
 }
 
 /**
@@ -22,9 +84,12 @@ export async function authenticateRequest(request: NextRequest): Promise<User | 
 
     const token = authHeader.substring(7) // "Bearer " 제거
 
-    // 토큰이 userId 형태라고 가정 (실제로는 JWT 검증 필요)
-    // TODO: JWT 라이브러리로 업그레이드 (jsonwebtoken, jose 등)
-    const userId = token
+    // Verify the secure token
+    const userId = verifyToken(token)
+    
+    if (!userId) {
+      return null
+    }
 
     // DB에서 사용자 조회
     const user = await prisma.user.findUnique({

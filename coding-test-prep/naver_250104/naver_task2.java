@@ -2,7 +2,6 @@ import java.util.*;
 
 class Solution {
 
-    // Helper classes defined as per problem description
     static class Pizza {
         public String name;
         public int price_S;
@@ -14,6 +13,14 @@ class Solution {
             this.price_S = price_S;
             this.price_M = price_M;
             this.price_L = price_L;
+        }
+
+        public int getPrice(String size) {
+            // Handle potential typo "Smal1" from problem description robustly
+            if ("Small".equals(size) || "Smal1".equals(size)) return price_S;
+            if ("Medium".equals(size)) return price_M;
+            if ("Large".equals(size)) return price_L;
+            throw new IllegalArgumentException("Unknown pizza size: " + size);
         }
     }
 
@@ -29,8 +36,11 @@ class Solution {
         }
     }
 
+    /**
+     * Calculates the minimum cost for the pizza order given 4 different discount strategies.
+     * We calculate the cost for each strategy independently and return the minimum.
+     */
     public int solution(Pizza[] menu, OrderItem[] order) {
-        // Map for quick pizza lookup
         Map<String, Pizza> menuMap = new HashMap<>();
         for (Pizza p : menu) {
             menuMap.put(p.name, p);
@@ -38,80 +48,82 @@ class Solution {
 
         int regularCost = calculateRegularCost(menuMap, order);
         
-        int cost1 = applyDiscount1(menuMap, order, regularCost);
-        int cost2 = applyDiscount2(menuMap, order, regularCost);
-        int cost3 = applyDiscount3(menuMap, order);
-        int cost4 = applyDiscount4(menuMap, order, regularCost);
+        // Calculate costs with each discount applied
+        int costWithDiscount1 = applyDiscount1(menuMap, order, regularCost);
+        int costWithDiscount2 = applyDiscount2(menuMap, order, regularCost);
+        int costWithDiscount3 = applyDiscount3(menuMap, order); // Re-calculates total logic internally
+        int costWithDiscount4 = applyDiscount4(menuMap, order, regularCost);
 
-        return Math.min(regularCost, Math.min(Math.min(cost1, cost2), Math.min(cost3, cost4)));
-    }
-
-    private int getPrice(Pizza p, String size) {
-        if (size.equals("Small") || size.equals("Smal1")) return p.price_S; // Handle potential typo in problem text
-        if (size.equals("Medium")) return p.price_M;
-        if (size.equals("Large")) return p.price_L;
-        return 0;
+        return Math.min(regularCost, 
+                Math.min(Math.min(costWithDiscount1, costWithDiscount2), 
+                         Math.min(costWithDiscount3, costWithDiscount4)));
     }
 
     private int calculateRegularCost(Map<String, Pizza> menuMap, OrderItem[] order) {
         int total = 0;
         for (OrderItem item : order) {
             Pizza p = menuMap.get(item.name);
-            total += getPrice(p, item.size) * item.quantity;
+            total += p.getPrice(item.size) * item.quantity;
         }
         return total;
     }
 
-    // Discount 1: Buy 3, cheapest one is free
+    /**
+     * Discount 1: "3 for 2 deal" (Buy 3 or more total pizzas, get the cheapest one free).
+     * Strategy: Subtract the price of the single cheapest pizza in the entire order.
+     */
     private int applyDiscount1(Map<String, Pizza> menuMap, OrderItem[] order, int regularCost) {
-        int totalItems = 0;
+        int totalQuantity = 0;
         int minPrice = Integer.MAX_VALUE;
 
         for (OrderItem item : order) {
-            totalItems += item.quantity;
+            totalQuantity += item.quantity;
             Pizza p = menuMap.get(item.name);
-            int price = getPrice(p, item.size);
+            int price = p.getPrice(item.size);
             if (price < minPrice) {
                 minPrice = price;
             }
         }
 
-        if (totalItems >= 3) {
+        if (totalQuantity >= 3) {
             return regularCost - minPrice;
         }
         return regularCost;
     }
 
-    // Discount 2: Buy 5 of same name for 100
+    /**
+     * Discount 2: "5 of same pizza for 100".
+     * Strategy: For every 5 pizzas of the same name, replace their cost with 100.
+     * To maximize benefit, we pick the 5 most expensive ones of that type (though usually same type/size has same price, 
+     * but different sizes of same type matter).
+     */
     private int applyDiscount2(Map<String, Pizza> menuMap, OrderItem[] order, int regularCost) {
         int bestPrice = regularCost;
 
-        // Group items by pizza name
-        Map<String, List<Integer>> pizzaPricesByName = new HashMap<>();
+        // Group prices by pizza name
+        Map<String, List<Integer>> pricesByName = new HashMap<>();
 
         for (OrderItem item : order) {
-            pizzaPricesByName.putIfAbsent(item.name, new ArrayList<>());
+            pricesByName.putIfAbsent(item.name, new ArrayList<>());
             Pizza p = menuMap.get(item.name);
-            int price = getPrice(p, item.size);
+            int price = p.getPrice(item.size);
             for (int i = 0; i < item.quantity; i++) {
-                pizzaPricesByName.get(item.name).add(price);
+                pricesByName.get(item.name).add(price);
             }
         }
 
-        // Try applying discount for each pizza name
-        for (String name : pizzaPricesByName.keySet()) {
-            List<Integer> prices = pizzaPricesByName.get(name);
+        for (List<Integer> prices : pricesByName.values()) {
             if (prices.size() >= 5) {
-                // Sort descending to remove the most expensive 5
+                // Sort descending to discount the most expensive ones first
                 Collections.sort(prices, Collections.reverseOrder());
                 
-                int sumOfExpensive5 = 0;
+                int sumOfTop5 = 0;
                 for (int i = 0; i < 5; i++) {
-                    sumOfExpensive5 += prices.get(i);
+                    sumOfTop5 += prices.get(i);
                 }
 
-                // New cost = Regular Cost - (Sum of 5 expensive) + 100
-                int currentDiscountedCost = regularCost - sumOfExpensive5 + 100;
+                // Apply discount: Remove original cost of these 5, add 100
+                int currentDiscountedCost = regularCost - sumOfTop5 + 100;
                 bestPrice = Math.min(bestPrice, currentDiscountedCost);
             }
         }
@@ -119,9 +131,15 @@ class Solution {
         return bestPrice;
     }
 
-    // Discount 3: For every Large, get free Small of same name
+    /**
+     * Discount 3: "Buy Large, get Small free".
+     * Strategy: For each pizza type, count Large and Small orders. 
+     * Free Smalls = min(Large count, Small count).
+     */
     private int applyDiscount3(Map<String, Pizza> menuMap, OrderItem[] order) {
         int totalCost = 0;
+        
+        // Group items by name to process pairs
         Map<String, List<OrderItem>> itemsByName = new HashMap<>();
         for (OrderItem item : order) {
             itemsByName.putIfAbsent(item.name, new ArrayList<>());
@@ -130,43 +148,51 @@ class Solution {
 
         for (String name : itemsByName.keySet()) {
             Pizza p = menuMap.get(name);
-            int lCount = 0;
-            int sCount = 0;
+            int largeCount = 0;
+            int smallCount = 0;
             
+            // First pass: Calculate full price and count sizes
             for (OrderItem item : itemsByName.get(name)) {
-                if (item.size.equals("Large")) {
-                    lCount += item.quantity;
-                    totalCost += p.price_L * item.quantity;
-                } else if (item.size.equals("Small") || item.size.equals("Smal1")) {
-                    sCount += item.quantity;
-                    totalCost += p.price_S * item.quantity;
-                } else {
-                    totalCost += p.price_M * item.quantity;
+                totalCost += p.getPrice(item.size) * item.quantity;
+                
+                if ("Large".equals(item.size)) {
+                    largeCount += item.quantity;
+                } else if ("Small".equals(item.size) || "Smal1".equals(item.size)) {
+                    smallCount += item.quantity;
                 }
             }
 
-            int freeSmalls = Math.min(lCount, sCount);
+            // Deduct price of free small pizzas
+            int freeSmalls = Math.min(largeCount, smallCount);
             totalCost -= freeSmalls * p.price_S;
         }
 
         return totalCost;
     }
 
-    // Discount 4: Buy 3 Large, pay for 3 Medium
+    /**
+     * Discount 4: "Buy 3 Large, pay for 3 Medium".
+     * Strategy: Convert 3 Large pizzas to Medium price.
+     * To maximize benefit, we convert the Large pizzas with the biggest price difference (L - M).
+     */
     private int applyDiscount4(Map<String, Pizza> menuMap, OrderItem[] order, int regularCost) {
         List<Integer> savings = new ArrayList<>();
 
         for (OrderItem item : order) {
-            if (item.size.equals("Large")) {
+            if ("Large".equals(item.size)) {
                 Pizza p = menuMap.get(item.name);
                 int saving = p.price_L - p.price_M;
-                for (int i = 0; i < item.quantity; i++) {
-                    savings.add(saving);
+                // If saving is positive (L > M), it's a candidate
+                if (saving > 0) {
+                    for (int i = 0; i < item.quantity; i++) {
+                        savings.add(saving);
+                    }
                 }
             }
         }
 
         if (savings.size() >= 3) {
+            // Sort savings descending to pick the best 3 deals
             Collections.sort(savings, Collections.reverseOrder());
             int totalSavings = savings.get(0) + savings.get(1) + savings.get(2);
             return regularCost - totalSavings;

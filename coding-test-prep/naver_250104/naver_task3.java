@@ -19,6 +19,17 @@ public class LoggingAspect {
         this.logFacade = logFacade;
     }
 
+    // -- Pointcuts --
+
+    @Pointcut("execution(* com.codility.aop.date.DateService.getNextDate(..))")
+    private void dateServiceGetNextDate() {}
+
+    @Pointcut("execution(* com.codility.aop.date.DateRepository.save(..)) || " +
+               "execution(* com.codility.aop.calendar.MeetingRepository.save(..))")
+    private void repositorySaveMethods() {}
+
+    // -- Advice --
+
     /**
      * Log invocation of each method annotated with @Log.
      */
@@ -35,9 +46,8 @@ public class LoggingAspect {
 
     /**
      * Log return value of DateService.getNextDate method.
-     * Note: Requirement text said 'logInvocation', but 'logReturnValue' is semantically correct and matches previous code hints.
      */
-    @AfterReturning(pointcut = "execution(* com.codility.aop.date.DateService.getNextDate(..))", returning = "result")
+    @AfterReturning(pointcut = "dateServiceGetNextDate()", returning = "result")
     public void logDateServiceReturnValue(JoinPoint joinPoint, Object result) {
         String className = joinPoint.getTarget().getClass().getName();
         String methodName = joinPoint.getSignature().getName();
@@ -48,7 +58,7 @@ public class LoggingAspect {
     /**
      * Log exception thrown by DateService.getNextDate method.
      */
-    @AfterThrowing(pointcut = "execution(* com.codility.aop.date.DateService.getNextDate(..))", throwing = "exception")
+    @AfterThrowing(pointcut = "dateServiceGetNextDate()", throwing = "exception")
     public void logDateServiceException(JoinPoint joinPoint, Exception exception) {
         String className = joinPoint.getTarget().getClass().getName();
         String methodName = joinPoint.getSignature().getName();
@@ -58,10 +68,9 @@ public class LoggingAspect {
 
     /**
      * Log objects saved using DateRepository.save or MeetingRepository.save.
-     * Safe checks added for arguments.
+     * Changed from @After to @AfterReturning to ensure we only log on successful saves.
      */
-    @After("execution(* com.codility.aop.date.DateRepository.save(..)) || " +
-           "execution(* com.codility.aop.calendar.MeetingRepository.save(..))")
+    @AfterReturning("repositorySaveMethods()")
     public void logSavedEntity(JoinPoint joinPoint) {
         Object[] args = joinPoint.getArgs();
         if (args == null || args.length == 0) {
@@ -71,7 +80,6 @@ public class LoggingAspect {
         String className = joinPoint.getTarget().getClass().getName();
         Object entity = args[0];
 
-        // Note: Requirement text said 'logSavedEntity', but 'logEntitySave' matches previous code hints.
         logFacade.logEntitySave(new EntitySaveLogDto(className, entity));
     }
 
