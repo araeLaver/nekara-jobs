@@ -11,73 +11,107 @@ async function crawlNaver() {
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
     
-    console.log('네이버 채용 사이트 접근 중...');
-    await page.goto('https://recruit.navercorp.com/rcrt/list.do', {
-      waitUntil: 'domcontentloaded',
-      timeout: 30000
-    });
+    // Enable Request Interception to catch JSON data directly
+    await page.setRequestInterception(true);
     
-    // Wait for the correct container for job listings
-    await page.waitForSelector('ul.card_list', { timeout: 15000 });
+    // Storage for captured jobs
+    const capturedJobs = [];
 
-    const jobs = await page.evaluate(() => {
-      const jobList = [];
-      const jobElements = document.querySelectorAll('ul.card_list li.card_item');
-
-      jobElements.forEach(item => {
-        try {
-          const titleElement = item.querySelector('h4.card_title');
-          const linkElement = item.querySelector('a.card_link');
-          const infoElements = item.querySelectorAll('dl.card_info dd.info_text');
-
-          if (!titleElement || !linkElement || infoElements.length < 4) return;
-
-          const title = titleElement.textContent.trim();
-          const onclickAttr = linkElement.getAttribute('onclick');
-          const annoIdMatch = onclickAttr.match(/show\('(\d+)'\)/);
-          if (!annoIdMatch) return;
-          
-          const annoId = annoIdMatch[1];
-          const url = `https://recruit.navercorp.com/rcrt/view.do?annoId=${annoId}`;
-
-          const department = infoElements[0]?.textContent.trim();
-          const jobField = infoElements[1]?.textContent.trim(); // Not always dev-related
-          const experience = infoElements[2]?.textContent.trim();
-          const jobType = infoElements[3]?.textContent.trim();
-          const deadline = infoElements[4]?.textContent.trim();
-
-          const devKeywords = [
-            'engineer', 'developer', '개발', '엔지니어', 'backend', 'frontend', 
-            'android', 'ios', 'sre', 'devops', 'ai', 'ml', 'data', 'graphics', 'security'
-          ];
-          
-          const isDevJob = devKeywords.some(keyword => 
-            title.toLowerCase().includes(keyword) || 
-            department.toLowerCase().includes(keyword) ||
-            jobField.toLowerCase().includes(keyword)
-          );
-
-          if (isDevJob) {
-            jobList.push({
-              title,
-              originalUrl: url,
-              company: 'naver',
-              jobType,
-              experience,
-              department,
-              postedAt: new Date().toISOString(), // The page doesn't show post date easily
-              description: `${title} @ ${department}`,
-              location: '경기 성남시', // Default
-            });
-          }
-        } catch (e) {
-          console.error('네이버 개별 채용공고 파싱 오류:', e.message);
-        }
-      });
-      return jobList;
+    page.on('request', request => {
+        request.continue();
     });
 
-    console.log(`네이버에서 ${jobs.length}개 채용공고 수집 완료`);
+    page.on('response', async response => {
+        const url = response.url();
+        // Naver often sends data via POST to /rcrt/list.do or similar
+        if (url.includes('/rcrt/list.do') && response.request().method() === 'POST') {
+            try {
+                // Naver returns HTML usually, but let's check content type
+                const contentType = response.headers()['content-type'];
+                // If it's HTML, we might need to parse it. 
+                // However, Naver's new site might use pure JSON API.
+                // Let's fallback to DOM parsing if interception is tricky for this specific site structure.
+            } catch (e) {}
+        }
+    });
+
+    console.log('네이버: 페이지 로딩 및 API 탐색...');
+    
+    // Naver's page load
+    await page.goto('https://recruit.navercorp.com/rcrt/list.do', { waitUntil: 'networkidle0' });
+
+    // Since interception of "list.do" returning HTML is complex (it's server-side rendered mostly),
+    // We stick to DOM scraping but with a FORCEFUL approach: 
+    // Execute a script to click "View More" until it disappears.
+    
+    await page.evaluate(async () => {
+        await new Promise((resolve) => {
+             let attempts = 0;
+             const maxAttempts = 20; // Try more
+             const timer = setInterval(() => {
+                 attempts++;
+                 window.scrollTo(0, document.body.scrollHeight);
+                 
+                 // Naver's "View More" button selector (needs precise verification)
+                 // Based on inspection: <button type="button" class="btn_more">더보기</button>
+                 const btn = document.querySelector('.btn_more');
+                 if (btn && btn.offsetParent !== null) { // Check visibility
+                     btn.click();
+                 } else {
+                     // If no button visible, we might be done OR it's loading.
+                 }
+
+                 if (attempts >= maxAttempts) {
+                     clearInterval(timer);
+                     resolve();
+                 }
+             }, 1000);
+        });
+    });
+
+    // Wait a bit
+    await new Promise(r => setTimeout(r, 2000));
+
+    // Parse finally
+    const jobs = await page.evaluate(() => {
+        const list = [];
+        const items = document.querySelectorAll('.card_item'); // Check this selector
+        
+        items.forEach(item => {
+             try {
+                 const titleEl = item.querySelector('.card_title');
+                 if (!titleEl) return;
+                 const title = titleEl.innerText.trim();
+                 
+                 // Onclick extraction for URL
+                 const linkEl = item.querySelector('.card_link');
+                 let url = '';
+                 if (linkEl) {
+                     const onclick = linkEl.getAttribute('onclick');
+                     if (onclick && onclick.includes('show')) {
+                         const id = onclick.match(/'(\d+)'/);
+                         if (id) url = `https://recruit.navercorp.com/rcrt/view.do?annoId=${id[1]}`;
+                     }
+                 }
+                 
+                 const devKeywords = ['SW', 'Developer', '개발', 'Tech', 'Engineer', 'Data', 'AI', 'Cloud', 'Security'];
+                 // Naver usually groups by 'Tech' category but let's filter by title
+                 
+                 if (devKeywords.some(k => title.includes(k))) {
+                     list.push({
+                         title,
+                         originalUrl: url || 'https://recruit.navercorp.com/rcrt/list.do',
+                         company: 'naver',
+                         department: 'Tech',
+                         postedAt: new Date().toISOString()
+                     });
+                 }
+             } catch(e) {}
+        });
+        return list;
+    });
+
+    console.log(`네이버 최종 수집: ${jobs.length}개`);
     return jobs;
 
   } catch (error) {

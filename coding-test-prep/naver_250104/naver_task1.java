@@ -1,46 +1,53 @@
-// Task 1 Solution
-
 class Solution {
+    
+    // Constants for fare calculation
+    private static final int BASE_FARE = 1;
+    private static final int FARE_PER_DISTANCE = 2;
+
     /**
-     * Calculates the minimum cost for the passenger.
+     * Calculates the minimum cost for the passenger by comparing the total pay-per-ride cost
+     * against the daily maximum limit determined by the farthest station visited.
      * 
-     * Time Complexity: O(N) - We iterate through the ride history once.
-     * Space Complexity: O(1) - We use a constant amount of extra space.
+     * Time Complexity: O(N)
+     * Space Complexity: O(1)
      */
-    public int solution(int[] start, int[] dest, int[] limit) {
-        if (start == null || dest == null || start.length != dest.length) {
-            throw new IllegalArgumentException("Start and destination arrays must be non-null and of equal length.");
-        }
+    public int solution(int[] start, int[] dest, int[] dailyLimits) {
+        validateInput(start, dest, dailyLimits);
 
-        int n = start.length;
+        int numberOfRides = start.length;
         int maxStationVisited = 0;
-        int totalCost = 0;
+        long totalPayPerRideCost = 0; // Use long to prevent overflow during accumulation
 
-        for (int i = 0; i < n; i++) {
-            // Calculate distance between start and destination
+        for (int i = 0; i < numberOfRides; i++) {
             int distance = Math.abs(dest[i] - start[i]);
+            int rideCost = BASE_FARE + (FARE_PER_DISTANCE * distance);
             
-            // Fee calculation: Base fee 1 + (2 * distance)
-            int rideCost = 1 + (2 * distance);
-            
-            // Accumulate total cost
-            totalCost += rideCost;
+            totalPayPerRideCost += rideCost;
 
-            // Update the maximum station number visited to find the applicable daily limit
+            // Track the furthest station index to determine the daily limit cap
             maxStationVisited = Math.max(maxStationVisited, Math.max(start[i], dest[i]));
         }
 
-        // The daily limit is determined by the largest station number visited.
-        // Ensure maxStationVisited is within bounds of the limit array (though problem constraints usually guarantee this).
-        if (maxStationVisited >= limit.length) {
-             // Fallback or handle error if station index exceeds limit array bounds. 
-             // For this problem context, we assume valid input per constraints.
-             maxStationVisited = limit.length - 1; 
+        // Determine the applicable daily limit.
+        // If the visited station index exceeds the limits array, we clamp to the last available limit.
+        // (Assuming standard problem constraints where limits cover the station range or the last limit applies indefinitely)
+        int applicableDailyLimit;
+        if (maxStationVisited >= dailyLimits.length) {
+            applicableDailyLimit = dailyLimits[dailyLimits.length - 1];
+        } else {
+            applicableDailyLimit = dailyLimits[maxStationVisited];
         }
 
-        int dailyLimit = limit[maxStationVisited];
+        // Return the minimum of the two costs (casted back to int as per signature)
+        return (int) Math.min(totalPayPerRideCost, applicableDailyLimit);
+    }
 
-        // The passenger pays the minimum of the calculated total cost and the daily limit.
-        return Math.min(totalCost, dailyLimit);
+    private void validateInput(int[] start, int[] dest, int[] dailyLimits) {
+        if (start == null || dest == null || dailyLimits == null) {
+            throw new IllegalArgumentException("Input arrays cannot be null");
+        }
+        if (start.length != dest.length) {
+            throw new IllegalArgumentException("Start and destination arrays must have the same length");
+        }
     }
 }

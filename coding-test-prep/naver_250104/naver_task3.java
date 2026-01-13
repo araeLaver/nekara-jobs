@@ -7,7 +7,6 @@ import org.aspectj.lang.annotation.*;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Aspect
 @Component
@@ -15,17 +14,25 @@ public class LoggingAspect {
 
     private final LogFacade logFacade;
 
+    // Pointcut Constants
+    private static final String POINTCUT_DATE_SERVICE_NEXT_DATE = 
+            "execution(* com.codility.aop.date.DateService.getNextDate(..))";
+    private static final String POINTCUT_REPO_SAVE = 
+            "execution(* com.codility.aop.date.DateRepository.save(..)) || " +
+            "execution(* com.codility.aop.calendar.MeetingRepository.save(..))";
+    private static final String POINTCUT_DB_CONNECTIVITY_SAVE = 
+            "execution(* com.codility.aop.database.DatabaseConnectivity.save(..))";
+
     public LoggingAspect(LogFacade logFacade) {
         this.logFacade = logFacade;
     }
 
     // -- Pointcuts --
 
-    @Pointcut("execution(* com.codility.aop.date.DateService.getNextDate(..))")
+    @Pointcut(POINTCUT_DATE_SERVICE_NEXT_DATE)
     private void dateServiceGetNextDate() {}
 
-    @Pointcut("execution(* com.codility.aop.date.DateRepository.save(..)) || " +
-               "execution(* com.codility.aop.calendar.MeetingRepository.save(..))")
+    @Pointcut(POINTCUT_REPO_SAVE)
     private void repositorySaveMethods() {}
 
     // -- Advice --
@@ -35,11 +42,11 @@ public class LoggingAspect {
      */
     @Around("@annotation(com.codility.aop.annotations.Log)")
     public Object logMethodInvocation(ProceedingJoinPoint joinPoint) throws Throwable {
-        String className = joinPoint.getTarget().getClass().getName();
-        String methodName = joinPoint.getSignature().getName();
-        List<Object> args = Arrays.asList(joinPoint.getArgs());
-
-        logFacade.logInvocation(new InvocationLogDto(className, methodName, args));
+        logFacade.logInvocation(new InvocationLogDto(
+            getClassName(joinPoint), 
+            getMethodName(joinPoint), 
+            Arrays.asList(joinPoint.getArgs())
+        ));
 
         return joinPoint.proceed();
     }
@@ -49,10 +56,11 @@ public class LoggingAspect {
      */
     @AfterReturning(pointcut = "dateServiceGetNextDate()", returning = "result")
     public void logDateServiceReturnValue(JoinPoint joinPoint, Object result) {
-        String className = joinPoint.getTarget().getClass().getName();
-        String methodName = joinPoint.getSignature().getName();
-
-        logFacade.logReturnValue(new ReturnLogDto(className, methodName, result));
+        logFacade.logReturnValue(new ReturnLogDto(
+            getClassName(joinPoint), 
+            getMethodName(joinPoint), 
+            result
+        ));
     }
 
     /**
@@ -60,10 +68,11 @@ public class LoggingAspect {
      */
     @AfterThrowing(pointcut = "dateServiceGetNextDate()", throwing = "exception")
     public void logDateServiceException(JoinPoint joinPoint, Exception exception) {
-        String className = joinPoint.getTarget().getClass().getName();
-        String methodName = joinPoint.getSignature().getName();
-
-        logFacade.logThrownException(new ExceptionLogDto(className, methodName, exception));
+        logFacade.logThrownException(new ExceptionLogDto(
+            getClassName(joinPoint), 
+            getMethodName(joinPoint), 
+            exception
+        ));
     }
 
     /**
@@ -77,32 +86,48 @@ public class LoggingAspect {
             return;
         }
 
-        String className = joinPoint.getTarget().getClass().getName();
-        Object entity = args[0];
-
-        logFacade.logEntitySave(new EntitySaveLogDto(className, entity));
+        logFacade.logEntitySave(new EntitySaveLogDto(
+            getClassName(joinPoint), 
+            args[0]
+        ));
     }
 
     /**
      * Log execution time of DatabaseConnectivity.save method.
      * Log only when execution was successful.
      */
-    @Around("execution(* com.codility.aop.database.DatabaseConnectivity.save(..))")
+    @Around(POINTCUT_DB_CONNECTIVITY_SAVE)
     public Object logDatabaseConnectivitySaveTime(ProceedingJoinPoint joinPoint) throws Throwable {
-        String className = joinPoint.getTarget().getClass().getName();
         Object[] args = joinPoint.getArgs();
         Object entity = (args != null && args.length > 0) ? args[0] : null;
 
-        long startTime = System.currentTimeMillis();
+        // Use nanoTime for precision
+        long startNano = System.nanoTime();
         
         // proceed() will throw if the underlying method throws.
         // In that case, lines below are skipped, satisfying "no logging on exception".
         Object result = joinPoint.proceed();
         
-        long executionTime = System.currentTimeMillis() - startTime;
+        // Convert nano to millis for the DTO
+        long executionTimeMillis = (System.nanoTime() - startNano) / 1_000_000;
 
-        logFacade.logEntitySavingTime(new EntitySaveTimeLogDto(className, entity, executionTime));
+        logFacade.logEntitySavingTime(new EntitySaveTimeLogDto(
+            getClassName(joinPoint), 
+            entity, 
+            executionTimeMillis
+        ));
 
         return result;
+    }
+
+    // -- Helper Methods --
+
+    private String getClassName(JoinPoint joinPoint) {
+        // Use getDeclaringTypeName() to avoid CGLIB proxy names (e.g., DateService$$EnhancerBySpringCGLIB...)
+        return joinPoint.getSignature().getDeclaringTypeName();
+    }
+
+    private String getMethodName(JoinPoint joinPoint) {
+        return joinPoint.getSignature().getName();
     }
 }
