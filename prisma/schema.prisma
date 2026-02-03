@@ -81,9 +81,14 @@ model CrawlLog {
   status    String   // success, failed, partial
   startTime DateTime
   endTime   DateTime?
-  jobCount  Int?
-  errorMsg  String?
-  createdAt DateTime @default(now())
+  jobCount     Int?
+  totalCount   Int?
+  validCount   Int?
+  invalidCount Int?
+  validRatio   Float?
+  qualityScore Float?
+  errorMsg     String?
+  createdAt    DateTime @default(now())
 
   @@index([company])
   @@index([createdAt])
@@ -266,4 +271,16 @@ model PostLike {
 
   @@id([postId, userId])
   @@map("post_likes")
+}
+
+// ??? ?? ??
+model CompanyQualityRule {
+  id                   String   @id @default(cuid())
+  company              String   @unique
+  minValidRatio        Float    @default(0.7)
+  minDescriptionLength Int      @default(50)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("company_quality_rules")
 }

@@ -4,17 +4,49 @@
  * 크롤링된 데이터의 품질을 보장하기 위한 검증 함수들
  */
 
+const MIN_VALID_RATIO = Number(process.env.CRAWL_MIN_VALID_RATIO || '0.7');
+const MIN_DESCRIPTION_LENGTH = Number(process.env.CRAWL_MIN_DESCRIPTION_LENGTH || '50');
+
+let COMPANY_THRESHOLDS = {};
+
+if (process.env.CRAWL_COMPANY_THRESHOLDS) {
+  try {
+    COMPANY_THRESHOLDS = JSON.parse(process.env.CRAWL_COMPANY_THRESHOLDS);
+  } catch (error) {
+    console.warn('[??] CRAWL_COMPANY_THRESHOLDS JSON ?? ??:', error.message);
+  }
+}
+
+function getCompanyThresholds(companyName, overrides = {}) {
+  if (!companyName) {
+    return {
+      minValidRatio: MIN_VALID_RATIO,
+      minDescriptionLength: MIN_DESCRIPTION_LENGTH
+    };
+  }
+
+  const normalized = companyName.toLowerCase();
+  const entry = COMPANY_THRESHOLDS[companyName] || COMPANY_THRESHOLDS[normalized];
+
+  return {
+    minValidRatio: Number(overrides.minValidRatio || entry?.minValidRatio || MIN_VALID_RATIO),
+    minDescriptionLength: Number(overrides.minDescriptionLength || entry?.minDescriptionLength || MIN_DESCRIPTION_LENGTH)
+  };
+}
+
+
+
 /**
  * 채용공고 데이터 검증
  * @param {Object} jobData - 검증할 채용공고 데이터
  * @returns {Object} { isValid: boolean, errors: string[], sanitizedData: Object }
  */
-function validateJobData(jobData) {
+function validateJobData(jobData, options = {}) {
   const errors = [];
   const sanitizedData = { ...jobData };
 
   // 1. 필수 필드 검증
-  const requiredFields = ['title', 'originalUrl', 'companyId'];
+  const requiredFields = ['title', 'originalUrl', 'companyId', 'postedAt'];
   for (const field of requiredFields) {
     if (!jobData[field] || jobData[field].toString().trim() === '') {
       errors.push(`필수 필드 누락: ${field}`);
@@ -242,7 +274,7 @@ function normalizeExperience(experience) {
  * @param {Array} jobsArray - 채용공고 배열
  * @returns {Object} { valid: Array, invalid: Array, stats: Object }
  */
-function validateJobBatch(jobsArray) {
+function validateJobBatch(jobsArray, options = {}) {
   const valid = [];
   const invalid = [];
   const stats = {
@@ -253,8 +285,9 @@ function validateJobBatch(jobsArray) {
     errorsByType: {}
   };
 
+
   for (const job of jobsArray) {
-    const result = validateJobData(job);
+    const result = validateJobData(job, options);
 
     if (result.isValid) {
       valid.push(result.sanitizedData);
@@ -275,38 +308,52 @@ function validateJobBatch(jobsArray) {
     }
   }
 
+  stats.validRatio = stats.total > 0 ? (stats.validCount / stats.total) : 0;
+  stats.qualityScore = stats.validRatio * 100;
+
   return { valid, invalid, stats };
 }
 
 /**
  * 크롤링 결과 품질 보고서 생성
  */
-function generateQualityReport(validationResult) {
+function generateQualityReport(validationResult, options = {}) {
   const { valid, invalid, stats } = validationResult;
+  const thresholds = getCompanyThresholds(options.companyName, options);
+  const minValidRatio = thresholds.minValidRatio;
+  const meetsThreshold = stats.validRatio >= minValidRatio && stats.total > 0;
 
-  console.log('\n=== 데이터 품질 보고서 ===');
-  console.log(`전체 데이터: ${stats.total}개`);
-  console.log(`유효 데이터: ${stats.validCount}개 (${((stats.validCount / stats.total) * 100).toFixed(1)}%)`);
-  console.log(`무효 데이터: ${stats.invalidCount}개 (${((stats.invalidCount / stats.total) * 100).toFixed(1)}%)`);
+  console.log('
+=== ??? ?? ??? ===');
+  console.log(`?? ??? ${stats.total}?`);
+  console.log(`?? ??? ${stats.validCount}?(${(stats.validRatio * 100).toFixed(1)}%)`);
+  console.log(`?? ??? ${stats.invalidCount}?(${((stats.invalidCount / stats.total) * 100).toFixed(1)}%)`);
+  console.log(`?? ?? ?? ??: ${(minValidRatio * 100).toFixed(0)}%`);
 
   if (stats.invalidCount > 0) {
-    console.log('\n에러 유형별 통계:');
+    console.log('
+?? ??? ??:');
     for (const [errorType, count] of Object.entries(stats.errorsByType)) {
-      console.log(`  - ${errorType}: ${count}건`);
+      console.log(`  - ${errorType}: ${count}?`);
     }
 
-    console.log('\n처음 5개의 무효 데이터 샘플:');
+    console.log('
+?? 5?? ?? ??? ??:');
     invalid.slice(0, 5).forEach((item, index) => {
-      console.log(`  ${index + 1}. 제목: ${item.originalData.title || '(없음)'}`);
-      console.log(`     에러: ${item.errors.join(', ')}`);
+      console.log(`  ${index + 1}. ??: ${item.originalData.title || '(??)'}`);
+      console.log(`     ??: ${item.errors.join(', ')}`);
     });
   }
 
-  console.log('========================\n');
+  console.log('========================
+');
 
   return {
     passed: stats.invalidCount === 0,
-    qualityScore: (stats.validCount / stats.total) * 100,
+    qualityScore: stats.qualityScore,
+    validRatio: stats.validRatio,
+    minValidRatio,
+    meetsThreshold,
     report: stats
   };
 }

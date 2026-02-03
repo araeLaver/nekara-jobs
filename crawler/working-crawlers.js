@@ -6,6 +6,104 @@ const { crawlNexon } = require('./nexon');
 const { crawlNaver } = require('./naver');
 const { crawlLine } = require('./line');
 const { crawlBaemin } = require('./baemin');
+const { PrismaClient } = require('@prisma/client');
+
+const DEFAULT_TIMEOUT_MS = Number(process.env.CRAWL_TIMEOUT_MS || 30000);
+const MAX_CONCURRENCY = Number(process.env.CRAWL_CONCURRENCY || 3);
+const RETRY_COUNT = Number(process.env.CRAWL_RETRY_COUNT || 1);
+const RETRY_DELAY_MS = Number(process.env.CRAWL_RETRY_DELAY_MS || 2000);
+
+const HEALTHCHECK_ENABLED = process.env.CRAWL_HEALTHCHECK_ENABLED === 'true';
+const FAIL_THRESHOLD = Number(process.env.CRAWL_FAIL_THRESHOLD || 3);
+const FAIL_WINDOW_HOURS = Number(process.env.CRAWL_FAIL_WINDOW_HOURS || 24);
+const FAIL_COOLDOWN_HOURS = Number(process.env.CRAWL_FAIL_COOLDOWN_HOURS || 6);
+
+const DISPLAY_NAME_MAP = {
+  kakao: 'Kakao',
+  toss: 'Toss',
+  nexon: 'NEXON',
+  naver: 'NAVER',
+  line: 'LINE',
+  baemin: 'Woowa Brothers'
+};
+
+async function shouldSkipCrawler(prisma, crawlerName) {
+  if (!HEALTHCHECK_ENABLED) {
+    return { skip: false };
+  }
+
+  const displayName = DISPLAY_NAME_MAP[crawlerName] || crawlerName;
+  const since = new Date();
+  since.setHours(since.getHours() - FAIL_WINDOW_HOURS);
+
+  const [recentFailures, lastLog] = await Promise.all([
+    prisma.crawlLog.count({
+      where: {
+        company: displayName,
+        status: { in: ['failed', 'warning'] },
+        createdAt: { gte: since }
+      }
+    }),
+    prisma.crawlLog.findFirst({
+      where: { company: displayName },
+      orderBy: { createdAt: 'desc' }
+    })
+  ]);
+
+  if (recentFailures >= FAIL_THRESHOLD && lastLog?.createdAt) {
+    const cooldownMs = FAIL_COOLDOWN_HOURS * 60 * 60 * 1000;
+    const sinceLast = Date.now() - new Date(lastLog.createdAt).getTime();
+    if (sinceLast < cooldownMs) {
+      return {
+        skip: true,
+        reason: 'healthcheck_failure_cooldown',
+        recentFailures,
+        lastStatus: lastLog.status,
+        lastAt: lastLog.createdAt,
+        displayName
+      };
+    }
+  }
+
+  return { skip: false };
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function withTimeout(promise, ms, label) {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error(`Timeout after ${ms}ms${label ? `: ${label}` : ''}`));
+        }, ms);
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function runWithRetry(fn, label) {
+  let attempt = 0;
+
+  while (true) {
+    try {
+      return await withTimeout(fn(), DEFAULT_TIMEOUT_MS, label);
+    } catch (error) {
+      attempt += 1;
+      if (attempt > RETRY_COUNT) {
+        throw error;
+      }
+      console.warn(`?? ${label} ??? (${attempt}/${RETRY_COUNT})`);
+      await sleep(RETRY_DELAY_MS);
+    }
+  }
+}
 
 class WorkingCrawlers {
   constructor() {
@@ -20,31 +118,54 @@ class WorkingCrawlers {
   }
 
   async crawlAll() {
-    console.log('🚀 검증된 크롤러 병렬 실행 중...');
+    console.log('? ??? ??? ?? ?? ?..');
 
-    // 병렬로 모든 크롤러 실행
-    const crawlerPromises = this.crawlers.map(async (crawler) => {
-      try {
-        console.log(`📊 ${crawler.name} 크롤링 시작...`);
-        const startTime = Date.now();
-        const jobs = await crawler.fn();
-        const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    const results = [];
+    let index = 0;
+    const prisma = new PrismaClient();
 
-        console.log(`✅ ${crawler.name}: ${jobs.length}개 채용공고 수집 (${duration}초)`);
-        return { company: crawler.name, jobs, count: jobs.length };
-      } catch (error) {
-        console.error(`❌ ${crawler.name} 크롤링 실패:`, error.message);
-        return { company: crawler.name, jobs: [], count: 0, error: error.message };
-      }
-    });
+    try {
+      const workerCount = Math.min(MAX_CONCURRENCY, this.crawlers.length);
+      const workers = Array.from({ length: workerCount }, async () => {
+        while (index < this.crawlers.length) {
+          const crawler = this.crawlers[index++];
+          try {
+            const health = await shouldSkipCrawler(prisma, crawler.name);
+            if (health.skip) {
+              console.warn(`?? ${crawler.name} ??: ?? ?? ?? (?? ${health.recentFailures}?)`);
+              results.push({
+                company: crawler.name,
+                jobs: [],
+                count: 0,
+                skipped: true,
+                reason: health.reason
+              });
+              continue;
+            }
 
-    // 모든 크롤러가 완료될 때까지 대기
-    const results = await Promise.all(crawlerPromises);
+            console.log(`?? ${crawler.name} ??? ??...`);
+            const startTime = Date.now();
+            const jobs = await runWithRetry(crawler.fn, crawler.name);
+            const duration = ((Date.now() - startTime) / 1000).toFixed(2);
 
-    const totalJobs = results.reduce((sum, result) => sum + result.jobs.length, 0);
-    console.log(`🎉 크롤링 완료! 총 ${totalJobs}개 채용공고 수집`);
+            console.log(`? ${crawler.name}: ${jobs.length}? ???? ?? (${duration}?)`);
+            results.push({ company: crawler.name, jobs, count: jobs.length });
+          } catch (error) {
+            console.error(`? ${crawler.name} ??? ??:`, error.message);
+            results.push({ company: crawler.name, jobs: [], count: 0, error: error.message });
+          }
+        }
+      });
 
-    return results;
+      await Promise.all(workers);
+
+      const totalJobs = results.reduce((sum, result) => sum + result.jobs.length, 0);
+      console.log(`?? ??? ??! ? ${totalJobs}? ???? ??`);
+
+      return results;
+    } finally {
+      await prisma.$disconnect();
+    }
   }
 }
 

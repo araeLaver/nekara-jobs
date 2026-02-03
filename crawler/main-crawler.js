@@ -2,11 +2,31 @@
 
 const { PrismaClient } = require('@prisma/client');
 const WorkingCrawlers = require('./working-crawlers');
-const { validateJobBatch, generateQualityReport } = require('./validators');
+const { validateJobBatch, generateQualityReport, getCompanyThresholds } = require('./validators');
 const fs = require('fs'); // Import fs module
 const path = require('path'); // Import path module
 
 const prisma = new PrismaClient();
+
+
+async function loadCompanyRule(prisma, companyName) {
+  try {
+    const rule = await prisma.companyQualityRule.findUnique({
+      where: { company: companyName }
+    });
+
+    if (!rule) return null;
+
+    return {
+      minValidRatio: Number(rule.minValidRatio),
+      minDescriptionLength: Number(rule.minDescriptionLength)
+    };
+  } catch (error) {
+    console.warn('?? ??? ?? ?? ?? ??:', error.message);
+    return null;
+  }
+}
+
 
 // 로그 파일 경로 설정
 const logFilePath = path.join(__dirname, 'crawler-log.txt');
@@ -92,8 +112,33 @@ async function saveJobsToDatabase(jobs, companyName) {
     }));
 
     // 데이터 검증 수행
-    const validationResult = validateJobBatch(jobsWithCompanyId);
-    const qualityReport = generateQualityReport(validationResult);
+    const ruleOverrides = await loadCompanyRule(prisma, displayName);
+    const validationResult = validateJobBatch(jobsWithCompanyId, { companyName: displayName, ...ruleOverrides });
+    const qualityReport = generateQualityReport(validationResult, { companyName: displayName, ...ruleOverrides });
+
+    const strictMode = process.env.CRAWL_STRICT_MODE === 'true';
+    const thresholds = getCompanyThresholds(displayName, ruleOverrides || {});
+    const minValidRatio = thresholds.minValidRatio;
+    const validRatio = validationResult.stats.total > 0 ? (validationResult.stats.validCount / validationResult.stats.total) : 0;
+
+    if (strictMode && validRatio < minValidRatio) {
+      const msg = `${displayName}: ?? ?? ??? ?? ?? (?? ${(validRatio * 100).toFixed(1)}%, ?? ${(minValidRatio * 100).toFixed(0)}%)`;
+      console.warn(`?? ${msg}`);
+      logCrawlerResult('warn', msg, {
+        company: displayName,
+        validRatio,
+        minValidRatio
+      });
+
+      if (crawlLogId) {
+        await prisma.crawlLog.update({
+          where: { id: crawlLogId },
+          data: { status: 'warning', errorMsg: msg, endTime: new Date() }
+        });
+      }
+
+      return { saved: 0, updated: 0, deactivated: 0, skipped: true, reason: 'quality_below_threshold' };
+    }
 
     console.log(`📊 ${displayName} 데이터 품질: ${qualityReport.qualityScore.toFixed(1)}%`);
 

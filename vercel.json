@@ -18,8 +18,18 @@
   "crons": [
     {
       "path": "/api/cron/update-jobs",
-      "schedule": "0 9 * * *"
+      "schedule": "0 9,18 * * *"
+    },
+    {
+      "path": "/api/maintenance/cleanup",
+      "schedule": "0 3 * * 0"
+    },
+    {
+      "path": "/api/maintenance/apply-recommendations",
+      "schedule": "30 3 * * 0"
     }
   ],
-  "regions": ["icn1"]
+  "regions": [
+    "icn1"
+  ]
 }
