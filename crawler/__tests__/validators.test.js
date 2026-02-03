@@ -13,15 +13,27 @@ const {
   normalizeExperience,
 } = require('../validators');
 
+const baseJobData = {
+  title: 'Software Engineer',
+  originalUrl: 'https://example.com/job/1',
+  companyId: 'company-1',
+  postedAt: new Date().toISOString(),
+};
+
+const makeJobData = (overrides = {}) => ({
+  ...baseJobData,
+  ...overrides,
+});
+
 describe('Crawler Validators', () => {
   describe('validateJobData', () => {
     describe('required fields validation', () => {
       it('should pass when all required fields are present', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -30,10 +42,11 @@ describe('Crawler Validators', () => {
       });
 
       it('should fail when title is missing', () => {
-        const jobData = {
+        const jobData = makeJobData({
+          title: undefined,
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -42,10 +55,11 @@ describe('Crawler Validators', () => {
       });
 
       it('should fail when originalUrl is missing', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
+          originalUrl: undefined,
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -54,10 +68,11 @@ describe('Crawler Validators', () => {
       });
 
       it('should fail when companyId is missing', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
           originalUrl: 'https://example.com/job/1',
-        };
+          companyId: undefined,
+        });
 
         const result = validateJobData(jobData);
 
@@ -66,11 +81,11 @@ describe('Crawler Validators', () => {
       });
 
       it('should fail when required field is empty string', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: '',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -79,11 +94,11 @@ describe('Crawler Validators', () => {
       });
 
       it('should fail when required field is whitespace only', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: '   ',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -94,11 +109,11 @@ describe('Crawler Validators', () => {
 
     describe('title validation', () => {
       it('should trim title whitespace', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: '  Software Engineer  ',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -107,11 +122,11 @@ describe('Crawler Validators', () => {
 
       it('should fail when title exceeds 200 characters', () => {
         const longTitle = 'a'.repeat(201);
-        const jobData = {
+        const jobData = makeJobData({
           title: longTitle,
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -122,11 +137,11 @@ describe('Crawler Validators', () => {
 
       it('should accept title with exactly 200 characters', () => {
         const validTitle = 'a'.repeat(200);
-        const jobData = {
+        const jobData = makeJobData({
           title: validTitle,
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -134,11 +149,11 @@ describe('Crawler Validators', () => {
       });
 
       it('should fail for invalid title patterns - special chars only', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: '---___...',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -147,11 +162,11 @@ describe('Crawler Validators', () => {
       });
 
       it('should fail for "제목없음"', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: '제목없음',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -160,11 +175,11 @@ describe('Crawler Validators', () => {
       });
 
       it('should fail for "untitled" (case insensitive)', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: 'UNTITLED',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -175,11 +190,11 @@ describe('Crawler Validators', () => {
 
     describe('URL validation', () => {
       it('should accept valid HTTPS URL', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -189,11 +204,11 @@ describe('Crawler Validators', () => {
       it('should accept valid HTTP URL with warning', () => {
         const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
 
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
           originalUrl: 'http://example.com/job/1',
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -206,11 +221,11 @@ describe('Crawler Validators', () => {
       });
 
       it('should fail for invalid URL', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
           originalUrl: 'not-a-valid-url',
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -219,11 +234,11 @@ describe('Crawler Validators', () => {
       });
 
       it('should trim URL whitespace', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
           originalUrl: '  https://example.com/job/1  ',
           companyId: 'company-1',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -234,12 +249,12 @@ describe('Crawler Validators', () => {
     describe('date validation', () => {
       it('should accept valid postedAt date', () => {
         const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
           postedAt: new Date().toISOString(), // Use current date to avoid old date warning
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -248,12 +263,12 @@ describe('Crawler Validators', () => {
       });
 
       it('should fail for invalid postedAt date', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
           postedAt: 'not-a-date',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -266,12 +281,12 @@ describe('Crawler Validators', () => {
         const futureDate = new Date();
         futureDate.setFullYear(futureDate.getFullYear() + 1);
 
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
           postedAt: futureDate.toISOString(),
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -284,12 +299,12 @@ describe('Crawler Validators', () => {
       });
 
       it('should fail for invalid deadline date', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
           deadline: 'invalid-date',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -302,12 +317,12 @@ describe('Crawler Validators', () => {
         const pastDate = new Date();
         pastDate.setDate(pastDate.getDate() - 1);
 
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
           deadline: pastDate.toISOString(),
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -322,12 +337,12 @@ describe('Crawler Validators', () => {
         const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
         const longDescription = 'a'.repeat(10001);
 
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
           description: longDescription,
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -338,12 +353,12 @@ describe('Crawler Validators', () => {
       it('should truncate location exceeding 100 characters', () => {
         const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
 
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
           location: 'a'.repeat(101),
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -352,13 +367,13 @@ describe('Crawler Validators', () => {
       });
 
       it('should trim text fields', () => {
-        const jobData = {
+        const jobData = makeJobData({
           title: 'Software Engineer',
           originalUrl: 'https://example.com/job/1',
           companyId: 'company-1',
           location: '  서울  ',
           department: '  개발  ',
-        };
+        });
 
         const result = validateJobData(jobData);
 
@@ -535,21 +550,21 @@ describe('Crawler Validators', () => {
   describe('validateJobBatch', () => {
     it('should separate valid and invalid jobs', () => {
       const jobs = [
-        {
+        makeJobData({
           title: 'Valid Job',
           originalUrl: 'https://example.com/job/1',
           companyId: 'c1',
-        },
-        {
+        }),
+        makeJobData({
           title: '',
           originalUrl: 'https://example.com/job/2',
           companyId: 'c2',
-        },
-        {
+        }),
+        makeJobData({
           title: 'Another Valid Job',
           originalUrl: 'https://example.com/job/3',
           companyId: 'c3',
-        },
+        }),
       ];
 
       const result = validateJobBatch(jobs);
@@ -560,16 +575,16 @@ describe('Crawler Validators', () => {
 
     it('should return correct stats', () => {
       const jobs = [
-        {
+        makeJobData({
           title: 'Job 1',
           originalUrl: 'https://example.com/job/1',
           companyId: 'c1',
-        },
-        {
+        }),
+        makeJobData({
           title: '',
           originalUrl: 'invalid-url',
           companyId: 'c2',
-        },
+        }),
       ];
 
       const result = validateJobBatch(jobs);
@@ -581,12 +596,12 @@ describe('Crawler Validators', () => {
 
     it('should return sanitized data for valid jobs', () => {
       const jobs = [
-        {
+        makeJobData({
           title: '  Software Engineer  ',
           originalUrl: 'https://example.com/job/1',
           companyId: 'c1',
           location: '서울시',
-        },
+        }),
       ];
 
       const result = validateJobBatch(jobs);
@@ -597,11 +612,11 @@ describe('Crawler Validators', () => {
 
     it('should include original data and errors for invalid jobs', () => {
       const jobs = [
-        {
+        makeJobData({
           title: '',
           originalUrl: 'https://example.com/job/1',
           companyId: 'c1',
-        },
+        }),
       ];
 
       const result = validateJobBatch(jobs);
@@ -613,8 +628,8 @@ describe('Crawler Validators', () => {
 
     it('should count errors by type', () => {
       const jobs = [
-        { title: '', originalUrl: 'https://example.com/1', companyId: 'c1' },
-        { title: 'Valid', originalUrl: 'invalid', companyId: 'c2' },
+        makeJobData({ title: '', originalUrl: 'https://example.com/1', companyId: 'c1' }),
+        makeJobData({ title: 'Valid', originalUrl: 'invalid', companyId: 'c2' }),
       ];
 
       const result = validateJobBatch(jobs);
@@ -633,8 +648,8 @@ describe('Crawler Validators', () => {
 
     it('should handle all valid jobs', () => {
       const jobs = [
-        { title: 'Job 1', originalUrl: 'https://example.com/1', companyId: 'c1' },
-        { title: 'Job 2', originalUrl: 'https://example.com/2', companyId: 'c2' },
+        makeJobData({ title: 'Job 1', originalUrl: 'https://example.com/1', companyId: 'c1' }),
+        makeJobData({ title: 'Job 2', originalUrl: 'https://example.com/2', companyId: 'c2' }),
       ];
 
       const result = validateJobBatch(jobs);
@@ -647,8 +662,8 @@ describe('Crawler Validators', () => {
 
     it('should handle all invalid jobs', () => {
       const jobs = [
-        { title: '', originalUrl: 'invalid', companyId: '' },
-        { title: 'untitled', originalUrl: 'bad', companyId: '' },
+        makeJobData({ title: '', originalUrl: 'invalid', companyId: '' }),
+        makeJobData({ title: 'untitled', originalUrl: 'bad', companyId: '' }),
       ];
 
       const result = validateJobBatch(jobs);

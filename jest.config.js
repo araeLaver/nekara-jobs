@@ -6,6 +6,9 @@ module.exports = {
       testEnvironment: 'jsdom',
       testMatch: ['<rootDir>/src/components/**/*.test.{ts,tsx}'],
       setupFilesAfterEnv: ['<rootDir>/.jest/setup.js'],
+      collectCoverageFrom: [
+        'src/components/StatsCard.tsx'
+      ],
       moduleNameMapper: {
         '\\.css$': 'identity-obj-proxy',
         '^@/components/(.*)$': '<rootDir>/src/components/$1',
@@ -27,6 +30,16 @@ module.exports = {
         '<rootDir>/src/app/api/__tests__/**/*.test.{ts,tsx}',
       ],
       setupFilesAfterEnv: ['<rootDir>/.jest/setup-node.js'],
+      collectCoverageFrom: [
+        'src/lib/**/*.{ts,tsx}',
+        'src/services/**/*.{ts,tsx}',
+        'src/app/api/**/*.{ts,tsx}',
+        '!src/**/*.d.ts',
+        '!src/**/*.test.{ts,tsx}',
+        '!src/**/types.ts',
+        '!src/lib/__mocks__/**',
+        '!**/node_modules/**',
+      ],
       moduleNameMapper: {
         '^@/lib/(.*)$': '<rootDir>/src/lib/$1',
         '^@/lib/prisma$': '<rootDir>/src/lib/__mocks__/prisma.ts',
@@ -42,22 +55,11 @@ module.exports = {
       displayName: 'crawler',
       testEnvironment: 'node',
       testMatch: ['<rootDir>/crawler/__tests__/**/*.test.js'],
+      collectCoverageFrom: ['crawler/validators.js'],
       transform: {},
     },
   ],
   collectCoverage: true,
-  collectCoverageFrom: [
-    'src/lib/**/*.{ts,tsx}',
-    'src/services/**/*.{ts,tsx}',
-    'src/app/api/**/*.{ts,tsx}',
-    'src/components/StatsCard.tsx',
-    'crawler/validators.js',
-    '!src/**/*.d.ts',
-    '!src/**/*.test.{ts,tsx}',
-    '!src/**/types.ts',
-    '!src/lib/__mocks__/**',
-    '!**/node_modules/**',
-  ],
   coverageReporters: ['json', 'lcov', 'text', 'clover'],
   coverageThreshold: {
     global: {

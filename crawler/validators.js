@@ -323,30 +323,26 @@ function generateQualityReport(validationResult, options = {}) {
   const minValidRatio = thresholds.minValidRatio;
   const meetsThreshold = stats.validRatio >= minValidRatio && stats.total > 0;
 
-  console.log('
-=== ??? ?? ??? ===');
+  console.log('\n=== ??? ?? ??? ===');
   console.log(`?? ??? ${stats.total}?`);
   console.log(`?? ??? ${stats.validCount}?(${(stats.validRatio * 100).toFixed(1)}%)`);
   console.log(`?? ??? ${stats.invalidCount}?(${((stats.invalidCount / stats.total) * 100).toFixed(1)}%)`);
   console.log(`?? ?? ?? ??: ${(minValidRatio * 100).toFixed(0)}%`);
 
   if (stats.invalidCount > 0) {
-    console.log('
-?? ??? ??:');
+    console.log('\n?? ??? ??:');
     for (const [errorType, count] of Object.entries(stats.errorsByType)) {
       console.log(`  - ${errorType}: ${count}?`);
     }
 
-    console.log('
-?? 5?? ?? ??? ??:');
+    console.log('\n?? 5?? ?? ??? ??:');
     invalid.slice(0, 5).forEach((item, index) => {
       console.log(`  ${index + 1}. ??: ${item.originalData.title || '(??)'}`);
       console.log(`     ??: ${item.errors.join(', ')}`);
     });
   }
 
-  console.log('========================
-');
+  console.log('========================\n');
 
   return {
     passed: stats.invalidCount === 0,
@@ -359,6 +355,7 @@ function generateQualityReport(validationResult, options = {}) {
 }
 
 module.exports = {
+  getCompanyThresholds,
   validateJobData,
   validateJobBatch,
   generateQualityReport,

@@ -61,39 +61,6 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'))
   const [totalPages, setTotalPages] = useState(initialTotalPages)
 
-  const fetchJobs = async (page = 1, currentFilters = filters) => {
-    try {
-      setLoading(true)
-      setError(null) // Reset error on new fetch
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: '20',
-        ...Object.fromEntries(Object.entries(currentFilters).filter(([_, v]) => v))
-      })
-
-      const response = await fetch(`/api/jobs?${queryParams}`)
-      
-      if (response.status === 429) {
-        throw new Error('요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.')
-      }
-      
-      if (!response.ok) {
-        throw new Error('데이터를 불러오는 중 오류가 발생했습니다.')
-      }
-      
-      const data = await response.json()
-      setJobs(data.jobs || [])
-      setTotalPages(data.pagination?.pages || 1)
-      setCurrentPage(page)
-    } catch (error: any) {
-      console.error('채용공고 조회 실패:', error)
-      setError(error.message || '오류가 발생했습니다.')
-      setJobs([]) // Clear jobs on error to avoid stale data display
-    } finally {
-      setLoading(false)
-    }
-  }
-
   // Effect for handling filter changes
   useEffect(() => {
     const isInitialState = currentPage === 1 && !filters.company && !filters.location && !filters.jobType && !filters.search && !filters.department;
@@ -125,7 +92,7 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
     router.push(newURL, { scroll: false })
   }, [router])
 
-  const fetchJobs = useCallback(async (page = 1, currentFilters = filters) => {
+  const fetchJobs = useCallback(async (page: number, currentFilters: typeof filters) => {
     try {
       setLoading(true)
       setError(null) // Reset error on new fetch
@@ -156,15 +123,7 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
     } finally {
       setLoading(false)
     }
-  }, []) // Remove 'filters' dependency if we pass 'currentFilters' argument. But default arg uses 'filters'.
-         // To make it fully stable, let's remove default arg dependency or include it.
-         // Actually, simpler: fetchJobs depends on nothing if we always pass args.
-         // But the existing code calls fetchJobs(1) without filters.
-         // Let's keep it simple: Include 'filters' in deps for now to be safe, OR refactor calls.
-         // Better: make fetchJobs accept filters explicitly in all calls or use ref.
-         // For now, let's add 'filters' to deps to avoid stale closure, but that defeats the purpose if 'filters' changes often.
-         // Correct patterns: use a ref for current filters or pass them explicitly.
-         // Let's pass them explicitly in the handlers below.
+  }, [])
 
   const handleFilterChange = useCallback((newFilters: typeof filters) => {
     setCurrentPage(1)

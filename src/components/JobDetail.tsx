@@ -14,13 +14,14 @@ interface Job {
   experience: string
   salary: string
   postedAt: string
+  deadline?: string | null
   originalUrl: string
   company: {
     id: string
     name: string
-    nameEn: string
-    logo?: string
-    website?: string
+    nameEn: string | null
+    logo?: string | null
+    website?: string | null
   }
   tags: string[]
 }

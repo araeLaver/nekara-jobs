@@ -66,9 +66,25 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
     if (jobData) {
       // Serialize Date objects to strings for Client Component
       initialJob = {
-        ...jobData,
+        id: jobData.id,
+        title: jobData.title,
+        description: jobData.description ?? '',
+        location: jobData.location ?? '',
+        department: jobData.department ?? '',
+        jobType: jobData.jobType ?? '',
+        experience: jobData.experience ?? '',
+        salary: jobData.salary ?? '',
         postedAt: jobData.postedAt.toISOString(),
         deadline: jobData.deadline ? jobData.deadline.toISOString() : null,
+        originalUrl: jobData.originalUrl,
+        company: {
+          id: jobData.company.id,
+          name: jobData.company.name,
+          nameEn: jobData.company.nameEn,
+          logo: jobData.company.logo,
+          website: jobData.company.website
+        },
+        tags: jobData.tags.map(tag => tag.tag.name)
       }
     }
   } catch (error) {
