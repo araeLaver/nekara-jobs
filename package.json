@@ -1,7 +1,7 @@
 {
   "name": "nekara-jobs",
   "version": "1.0.0",
-  "description": "\ub124\uce74\ub77c\ucfe0\ubc30 \ucc44\uc6a9\uc815\ubcf4 \uc2e4\uc2dc\uac04 \uc9d1\uacc4 \uc0ac\uc774\ud2b8",
+  "description": "네카라쿠배 채용정보 실시간 집계 사이트",
   "main": "index.js",
   "scripts": {
     "dev": "next dev -p 4000",
@@ -69,6 +69,7 @@
     "@types/jest": "^30.0.0",
     "@types/ws": "^8.5.0",
     "babel-jest": "^30.2.0",
+    "baseline-browser-mapping": "^2.9.19",
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.0.0",
     "husky": "^8.0.0",
@@ -79,12 +80,12 @@
     "ts-node": "^10.9.0"
   },
   "keywords": [
-    "\ucc44\uc6a9",
-    "\ub124\uc774\ubc84",
-    "\uce74\uce74\uc624",
-    "\ub77c\uc778",
-    "\ucfe0\ud321",
-    "\ubc30\ub2ec\uc758\ubbfc\uc871"
+    "채용",
+    "네이버",
+    "카카오",
+    "라인",
+    "쿠팡",
+    "배달의민족"
   ],
   "author": "",
   "license": "ISC",
