@@ -6,10 +6,10 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const jobId = params.id
+    const { id: jobId } = await context.params
 
     if (!jobId) {
       throw new ValidationError('채용공고 ID가 필요합니다.')

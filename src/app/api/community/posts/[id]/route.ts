@@ -7,10 +7,10 @@ export const dynamic = 'force-dynamic'
 // GET: Fetch a single post by ID, including like info
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await context.params
 
     const post = await prisma.$transaction(async (tx) => {
       const postToUpdate = await tx.communityPost.findUnique({

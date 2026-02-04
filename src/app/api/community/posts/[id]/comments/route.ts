@@ -8,10 +8,10 @@ export const dynamic = 'force-dynamic'
 // 4. POST: Create a new comment on a post
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: postId } = params
+    const { id: postId } = await context.params
 
     const user = await authenticateRequest(request)
     if (!user) {

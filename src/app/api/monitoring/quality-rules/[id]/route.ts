@@ -12,16 +12,17 @@ function isAuthorized(request: NextRequest) {
   return authHeader === `Bearer ${secret}`
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     if (!isAuthorized(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await context.params
     const body = await request.json()
 
     const updated = await prisma.companyQualityRule.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         company: String(body.company),
         minValidRatio: Number(body.minValidRatio ?? 0.7),
@@ -35,14 +36,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     if (!isAuthorized(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await context.params
     await prisma.companyQualityRule.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ success: true })

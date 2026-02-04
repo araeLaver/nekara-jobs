@@ -7,10 +7,10 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: postId } = params
+    const { id: postId } = await context.params
 
     const user = await authenticateRequest(request)
     if (!user) {

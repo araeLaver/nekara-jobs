@@ -10,7 +10,7 @@ interface RateLimitStore {
 const store: RateLimitStore = {}
 
 // 메모리 정리 (5분마다)
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
   const now = Date.now()
   Object.keys(store).forEach(key => {
     if (store[key].resetTime < now) {
@@ -18,6 +18,11 @@ setInterval(() => {
     }
   })
 }, 5 * 60 * 1000)
+
+// Prevent tests/short-lived processes from hanging on the interval.
+if (typeof cleanupInterval.unref === 'function') {
+  cleanupInterval.unref()
+}
 
 export interface RateLimitConfig {
   interval: number // 시간 윈도우 (밀리초)
