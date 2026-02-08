@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { jobService, JobWithCompany } from '@/services/job.service' // JobWithCompany import
+import { jobService, JobWithCompanyAndTags } from '@/services/job.service' // JobWithCompany import
 import { handleApiError } from '@/lib/errors'
 import { rateLimit, apiRateLimits } from '@/lib/rate-limit'
 
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const result = await jobService.getJobs(filters, pagination)
 
     // 응답 형식 변환
-    const formattedJobs = result.jobs.map((job: JobWithCompany) => ({ // Explicitly cast job
+    const formattedJobs = result.jobs.map((job: JobWithCompanyAndTags) => ({ // Explicitly cast job
       id: job.id,
       title: job.title,
       location: job.location || '',
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
         nameEn: job.company.nameEn,
         logo: job.company.logo
       },
-      tags: [] // 성능을 위해 tags는 포함하지 않음
+      tags: job.tags.map(tag => tag.tag.name)
     }))
 
     return NextResponse.json({

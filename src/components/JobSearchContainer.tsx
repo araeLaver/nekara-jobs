@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import JobList from '@/components/JobList'
 import FilterBar from '@/components/FilterBar'
@@ -48,6 +48,7 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
   const [stats] = useState<Stats>(initialStats)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null) // Added error state
+  const isFirstRender = useRef(true)
 
   // URL에서 필터 초기값 가져오기
   const [filters, setFilters] = useState({
@@ -63,15 +64,17 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
 
   // Effect for handling filter changes
   useEffect(() => {
-    const isInitialState = currentPage === 1 && !filters.company && !filters.location && !filters.jobType && !filters.search && !filters.department;
-    
-    if (!isInitialState) {
-       const timer = setTimeout(() => {
-        fetchJobs(1, filters);
-      }, 300); // Debounce filter changes
-      return () => clearTimeout(timer);
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
     }
-  }, [filters])
+
+    const timer = setTimeout(() => {
+      fetchJobs(1, filters)
+    }, 300) // Debounce filter changes
+
+    return () => clearTimeout(timer)
+  }, [filters, fetchJobs])
 
   // URL 업데이트 함수
   const updateURL = useCallback((newFilters: typeof filters, page: number = 1) => {
@@ -129,21 +132,19 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
     setCurrentPage(1)
     setFilters(newFilters)
     updateURL(newFilters, 1)
-    fetchJobs(1, newFilters)
-  }, [updateURL, fetchJobs])
+  }, [updateURL])
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page)
     updateURL(filters, page)
     fetchJobs(page, filters)
-  }, [filters, updateURL, fetchJobs])
+  }, [filters, updateURL])
 
   const handleCompanyChange = useCallback((company: string) => {
     const newFilters = { ...filters, company }
     setFilters(newFilters)
     setCurrentPage(1)
     updateURL(newFilters, 1)
-    fetchJobs(1, newFilters)
   }, [filters, updateURL, fetchJobs])
 
   const handleHeroSearch = useCallback((query: string) => {
@@ -157,8 +158,7 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
     setFilters(newFilters)
     setCurrentPage(1)
     updateURL(newFilters, 1)
-    fetchJobs(1, newFilters)
-  }, [updateURL, fetchJobs])
+  }, [updateURL])
 
   return (
     <>

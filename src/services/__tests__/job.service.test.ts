@@ -257,6 +257,15 @@ describe('JobService', () => {
                 logo: true,
               },
             },
+            tags: {
+              select: {
+                tag: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         })
       );
@@ -330,7 +339,7 @@ describe('JobService', () => {
       prisma.job.findUnique.mockResolvedValue(mockJob);
       prisma.jobView.create.mockResolvedValue({});
 
-      await jobService.getJobById('job-1');
+      await jobService.getJobById('job-1', { incrementView: true });
 
       // Wait for async view count increment
       await new Promise(resolve => setTimeout(resolve, 10));
@@ -348,8 +357,17 @@ describe('JobService', () => {
       prisma.job.findUnique.mockResolvedValue(mockJob);
       prisma.jobView.create.mockRejectedValue(new Error('DB error'));
 
-      const result = await jobService.getJobById('job-1');
+      const result = await jobService.getJobById('job-1', { incrementView: true });
       expect(result).toEqual(mockJob);
+    });
+
+    it('should not increment view count by default', async () => {
+      prisma.job.findUnique.mockResolvedValue(mockJob);
+      prisma.jobView.create.mockResolvedValue({});
+
+      await jobService.getJobById('job-1');
+
+      expect(prisma.jobView.create).not.toHaveBeenCalled();
     });
   });
 

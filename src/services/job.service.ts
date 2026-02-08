@@ -9,6 +9,7 @@ import { Prisma, Job, Company } from '@prisma/client' // Add Company import
 import { NotFoundError, ValidationError } from '@/lib/errors'
 
 export type JobWithCompany = Job & { company: { id: string; name: string; nameEn: string | null; logo: string | null; } } // Define a new type for Job with included Company
+export type JobWithCompanyAndTags = JobWithCompany & { tags: { tag: { name: string } }[] }
 
 export interface JobFilters {
   company?: string
@@ -35,7 +36,7 @@ export class JobService {
   /**
    * 채용공고 목록 조회
    */
-  async getJobs(filters: JobFilters = {}, pagination: PaginationOptions = {}): Promise<{ jobs: JobWithCompany[]; pagination: PaginationResult }> {
+  async getJobs(filters: JobFilters = {}, pagination: PaginationOptions = {}): Promise<{ jobs: JobWithCompanyAndTags[]; pagination: PaginationResult }> {
     const page = Math.max(1, pagination.page || 1)
     const limit = Math.min(100, Math.max(1, pagination.limit || 20))
     const skip = (page - 1) * limit
@@ -53,6 +54,15 @@ export class JobService {
               name: true,
               nameEn: true,
               logo: true
+            }
+          },
+          tags: {
+            select: {
+              tag: {
+                select: {
+                  name: true
+                }
+              }
             }
           }
         },
@@ -81,7 +91,7 @@ export class JobService {
   /**
    * 채용공고 상세 조회
    */
-  async getJobById(id: string) {
+  async getJobById(id: string, options: { incrementView?: boolean } = {}) {
     const job = await prisma.job.findUnique({
       where: { id },
       include: {
@@ -107,9 +117,11 @@ export class JobService {
     }
 
     // 조회수 증가 (비동기, 에러 무시)
-    this.incrementViewCount(id).catch(err =>
-      console.error(`Failed to increment view count for job ${id}:`, err)
-    )
+    if (options.incrementView) {
+      this.incrementViewCount(id).catch(err =>
+        console.error(`Failed to increment view count for job ${id}:`, err)
+      )
+    }
 
     return job
   }

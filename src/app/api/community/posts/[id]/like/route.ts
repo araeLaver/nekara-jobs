@@ -20,6 +20,15 @@ export async function POST(
     const userId = user.id
 
     const result = await prisma.$transaction(async (tx) => {
+      const post = await tx.communityPost.findUnique({
+        where: { id: postId },
+        select: { id: true }
+      })
+
+      if (!post) {
+        return { notFound: true as const }
+      }
+
       const existingLike = await tx.postLike.findUnique({
         where: {
           postId_userId: {
@@ -39,15 +48,6 @@ export async function POST(
             },
           },
         })
-        const updatedPost = await tx.communityPost.update({
-          where: { id: postId },
-          data: {
-            likes: {
-              decrement: 1,
-            },
-          },
-        })
-        return { liked: false, likes: updatedPost.likes }
       } else {
         // Like
         await tx.postLike.create({
@@ -56,17 +56,20 @@ export async function POST(
             userId,
           },
         })
-        const updatedPost = await tx.communityPost.update({
-          where: { id: postId },
-          data: {
-            likes: {
-              increment: 1,
-            },
-          },
-        })
-        return { liked: true, likes: updatedPost.likes }
       }
+
+      const likesCount = await tx.postLike.count({ where: { postId } })
+      const updatedPost = await tx.communityPost.update({
+        where: { id: postId },
+        data: { likes: likesCount }
+      })
+
+      return { liked: !existingLike, likes: updatedPost.likes }
     })
+
+    if ('notFound' in result) {
+      return NextResponse.json({ error: '寃뚯떆湲??李얠쓣 ???놁뒿?덈떎.' }, { status: 404 })
+    }
 
     return NextResponse.json(result)
   } catch (error) {

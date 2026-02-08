@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: JobDetailPageProps): Promise<
   const jobId = params.id
   
   try {
-    const job = await jobService.getJobById(jobId)
+    const job = await jobService.getJobById(jobId, { incrementView: false })
 
     if (!job) {
       return {
@@ -61,7 +61,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   let initialJob = null
 
   try {
-    const jobData = await jobService.getJobById(params.id)
+    const jobData = await jobService.getJobById(params.id, { incrementView: true })
     
     if (jobData) {
       // Serialize Date objects to strings for Client Component
