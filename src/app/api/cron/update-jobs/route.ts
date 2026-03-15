@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
 
     const authHeader = request.headers.get('authorization')
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      console.log(`Auth mismatch: got="${authHeader}", expected="Bearer ${process.env.CRON_SECRET?.substring(0, 5)}..."`)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
