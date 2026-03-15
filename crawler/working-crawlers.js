@@ -9,9 +9,11 @@ const { crawlBaemin } = require('./baemin');
 const { getBrowser, IS_VERCEL } = require('./browser');
 const { PrismaClient } = require('@prisma/client');
 
-const DEFAULT_TIMEOUT_MS = Number(process.env.CRAWL_TIMEOUT_MS || 30000);
+const DEFAULT_TIMEOUT_MS = IS_VERCEL
+  ? Number(process.env.CRAWL_TIMEOUT_MS || 45000)
+  : Number(process.env.CRAWL_TIMEOUT_MS || 30000);
 const MAX_CONCURRENCY = IS_VERCEL ? 1 : Number(process.env.CRAWL_CONCURRENCY || 3);
-const RETRY_COUNT = Number(process.env.CRAWL_RETRY_COUNT || 1);
+const RETRY_COUNT = IS_VERCEL ? 0 : Number(process.env.CRAWL_RETRY_COUNT || 1);
 const RETRY_DELAY_MS = Number(process.env.CRAWL_RETRY_DELAY_MS || 2000);
 
 const HEALTHCHECK_ENABLED = process.env.CRAWL_HEALTHCHECK_ENABLED === 'true';

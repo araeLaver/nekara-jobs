@@ -25,7 +25,7 @@ async function crawlKakao(sharedBrowser) {
     });
 
     // 페이지 로딩 대기
-    await new Promise(r => setTimeout(r, 5000));
+    await new Promise(r => setTimeout(r, IS_VERCEL ? 3000 : 5000));
 
     // 채용공고 데이터 수집
     const jobs = await page.evaluate(() => {

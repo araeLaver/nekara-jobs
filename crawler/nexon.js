@@ -1,4 +1,4 @@
-const { getBrowser } = require('./browser');
+const { getBrowser, IS_VERCEL } = require('./browser');
 
 const DEV_KEYWORDS = [
   '개발', 'Engineer', 'Client', 'Server', 'Data', 'AI', 'Security',
@@ -41,11 +41,12 @@ async function crawlNexon(sharedBrowser) {
         });
 
         // SPA 로딩 대기
-        await new Promise(r => setTimeout(r, 5000));
+        await new Promise(r => setTimeout(r, IS_VERCEL ? 3000 : 5000));
 
         // 스크롤 + 더 보기 (페이지네이션을 트리거하기 위해)
+        const maxScrollAttempts = IS_VERCEL ? 5 : 25;
         let prevCount = 0;
-        for (let attempt = 0; attempt < 25; attempt++) {
+        for (let attempt = 0; attempt < maxScrollAttempts; attempt++) {
             await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
             await new Promise(r => setTimeout(r, 1500));
 

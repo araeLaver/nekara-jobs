@@ -1,4 +1,4 @@
-const { getBrowser } = require('./browser');
+const { getBrowser, IS_VERCEL } = require('./browser');
 
 async function crawlBaemin(sharedBrowser) {
   const browser = sharedBrowser || await getBrowser();
@@ -14,7 +14,7 @@ async function crawlBaemin(sharedBrowser) {
       timeout: 30000
     });
 
-    await new Promise(r => setTimeout(r, 3000));
+    await new Promise(r => setTimeout(r, IS_VERCEL ? 2000 : 3000));
 
     const jobs = await page.evaluate(() => {
       const jobList = [];

@@ -22,7 +22,7 @@ async function crawlToss(sharedBrowser) {
       timeout: 30000
     });
 
-    await new Promise(r => setTimeout(r, 5000));
+    await new Promise(r => setTimeout(r, IS_VERCEL ? 3000 : 5000));
 
     const jobs = await page.evaluate(() => {
       const jobList = [];
