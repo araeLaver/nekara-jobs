@@ -12,7 +12,7 @@
       "maxDuration": 30
     },
     "src/app/api/cron/update-jobs/route.ts": {
-      "maxDuration": 300
+      "maxDuration": 60
     }
   },
   "crons": [
