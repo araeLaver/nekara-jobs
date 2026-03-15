@@ -6,5 +6,11 @@
   "framework": "nextjs",
   "regions": [
     "icn1"
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/update-jobs",
+      "schedule": "0 9 * * *"
+    }
   ]
 }
