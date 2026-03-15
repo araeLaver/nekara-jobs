@@ -2,7 +2,8 @@
 const nextConfig = {
   images: {
     domains: ['recruit.navercorp.com', 'careers.kakao.com', 'careers.linecorp.com', 'www.coupang.jobs', 'www.woowahan.com']
-  }
+  },
+  serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium-min']
 }
 
 module.exports = nextConfig

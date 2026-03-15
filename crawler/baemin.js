@@ -1,10 +1,7 @@
-const puppeteer = require('puppeteer');
+const { getBrowser } = require('./browser');
 
-async function crawlBaemin() {
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
+async function crawlBaemin(sharedBrowser) {
+  const browser = sharedBrowser || await getBrowser();
 
   try {
     const page = await browser.newPage();
@@ -12,19 +9,16 @@ async function crawlBaemin() {
 
     console.log('배민 채용 사이트 접근 중...');
 
-    // 배민 채용 페이지로 이동
     await page.goto('https://career.woowahan.com/', {
       waitUntil: 'networkidle2',
       timeout: 30000
     });
 
-    await page.waitForTimeout(3000);
+    await new Promise(r => setTimeout(r, 3000));
 
-    // 다양한 셀렉터로 채용공고 요소 찾기
     const jobs = await page.evaluate(() => {
       const jobList = [];
 
-      // 가능한 셀렉터들
       const selectors = [
         '.job-list .job-item',
         '.career-list .career-item',
@@ -40,7 +34,6 @@ async function crawlBaemin() {
 
       let jobElements = [];
 
-      // 적절한 셀렉터 찾기
       for (const selector of selectors) {
         const elements = document.querySelectorAll(selector);
         if (elements.length > 0) {
@@ -50,7 +43,6 @@ async function crawlBaemin() {
         }
       }
 
-      // 텍스트 기반으로 개발 관련 요소 찾기
       if (jobElements.length === 0) {
         const allElements = document.querySelectorAll('div, article, section, li');
         Array.from(allElements).forEach(el => {
@@ -64,12 +56,10 @@ async function crawlBaemin() {
         console.log(`배민: 텍스트 기반으로 ${jobElements.length}개 요소 발견`);
       }
 
-      // 채용공고 데이터 추출
       const seenTitles = new Set();
 
       jobElements.forEach(element => {
         try {
-          // 제목 추출
           let title = '';
           const titleSelectors = ['h1', 'h2', 'h3', 'h4', '.title', '[class*="title"]', 'strong', 'a'];
 
@@ -88,7 +78,6 @@ async function crawlBaemin() {
           if (title && title.length > 3 && title.length < 150 && !seenTitles.has(title)) {
             seenTitles.add(title);
 
-            // 링크 추출
             const linkEl = element.querySelector('a[href]') || element.closest('a[href]');
             let url = 'https://career.woowahan.com/';
             if (linkEl) {
@@ -98,7 +87,6 @@ async function crawlBaemin() {
               }
             }
 
-            // 부서/팀 정보 추출
             let department = '개발팀';
             const deptSelectors = ['.team', '.department', '[class*="team"]', '[class*="dept"]'];
             for (const selector of deptSelectors) {
@@ -136,7 +124,7 @@ async function crawlBaemin() {
     console.error('배민 크롤링 오류:', error);
     return [];
   } finally {
-    await browser.close();
+    if (!sharedBrowser) await browser.close();
   }
 }
 

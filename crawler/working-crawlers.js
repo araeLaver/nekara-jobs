@@ -6,10 +6,11 @@ const { crawlNexon } = require('./nexon');
 const { crawlNaver } = require('./naver');
 const { crawlLine } = require('./line');
 const { crawlBaemin } = require('./baemin');
+const { getBrowser, IS_VERCEL } = require('./browser');
 const { PrismaClient } = require('@prisma/client');
 
 const DEFAULT_TIMEOUT_MS = Number(process.env.CRAWL_TIMEOUT_MS || 30000);
-const MAX_CONCURRENCY = Number(process.env.CRAWL_CONCURRENCY || 3);
+const MAX_CONCURRENCY = IS_VERCEL ? 1 : Number(process.env.CRAWL_CONCURRENCY || 3);
 const RETRY_COUNT = Number(process.env.CRAWL_RETRY_COUNT || 1);
 const RETRY_DELAY_MS = Number(process.env.CRAWL_RETRY_DELAY_MS || 2000);
 
@@ -99,7 +100,7 @@ async function runWithRetry(fn, label) {
       if (attempt > RETRY_COUNT) {
         throw error;
       }
-      console.warn(`?? ${label} ??? (${attempt}/${RETRY_COUNT})`);
+      console.warn(`⚠️ ${label} 재시도 (${attempt}/${RETRY_COUNT})`);
       await sleep(RETRY_DELAY_MS);
     }
   }
@@ -107,60 +108,94 @@ async function runWithRetry(fn, label) {
 
 class WorkingCrawlers {
   constructor() {
-    this.crawlers = [
+    // naver는 API 기반이므로 브라우저 불필요
+    this.browserCrawlers = [
       { name: 'kakao', fn: crawlKakao },
       { name: 'toss', fn: crawlToss },
       { name: 'nexon', fn: crawlNexon },
-      { name: 'naver', fn: crawlNaver },
       { name: 'line', fn: crawlLine },
       { name: 'baemin', fn: crawlBaemin }
+    ];
+    this.apiCrawlers = [
+      { name: 'naver', fn: crawlNaver }
     ];
   }
 
   async crawlAll() {
-    console.log('? ??? ??? ?? ?? ?..');
+    console.log(`🚀 크롤링 시작 (concurrency: ${MAX_CONCURRENCY}, vercel: ${IS_VERCEL})...`);
 
     const results = [];
-    let index = 0;
     const prisma = new PrismaClient();
 
     try {
-      const workerCount = Math.min(MAX_CONCURRENCY, this.crawlers.length);
-      const workers = Array.from({ length: workerCount }, async () => {
-        while (index < this.crawlers.length) {
-          const crawler = this.crawlers[index++];
-          try {
-            const health = await shouldSkipCrawler(prisma, crawler.name);
-            if (health.skip) {
-              console.warn(`?? ${crawler.name} ??: ?? ?? ?? (?? ${health.recentFailures}?)`);
-              results.push({
-                company: crawler.name,
-                jobs: [],
-                count: 0,
-                skipped: true,
-                reason: health.reason
-              });
-              continue;
-            }
-
-            console.log(`?? ${crawler.name} ??? ??...`);
-            const startTime = Date.now();
-            const jobs = await runWithRetry(crawler.fn, crawler.name);
-            const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-
-            console.log(`? ${crawler.name}: ${jobs.length}? ???? ?? (${duration}?)`);
-            results.push({ company: crawler.name, jobs, count: jobs.length });
-          } catch (error) {
-            console.error(`? ${crawler.name} ??? ??:`, error.message);
-            results.push({ company: crawler.name, jobs: [], count: 0, error: error.message });
+      // 1) API 기반 크롤러 먼저 실행 (브라우저 불필요)
+      for (const crawler of this.apiCrawlers) {
+        try {
+          const health = await shouldSkipCrawler(prisma, crawler.name);
+          if (health.skip) {
+            console.warn(`⏭️ ${crawler.name} 건너뜀: 연속 실패 쿨다운 (최근 ${health.recentFailures}회)`);
+            results.push({ company: crawler.name, jobs: [], count: 0, skipped: true, reason: health.reason });
+            continue;
           }
-        }
-      });
 
-      await Promise.all(workers);
+          console.log(`🔍 ${crawler.name} API 크롤링 시작...`);
+          const startTime = Date.now();
+          const jobs = await runWithRetry(crawler.fn, crawler.name);
+          const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+          console.log(`✅ ${crawler.name}: ${jobs.length}개 채용공고 수집 (${duration}초)`);
+          results.push({ company: crawler.name, jobs, count: jobs.length });
+        } catch (error) {
+          console.error(`❌ ${crawler.name} 크롤링 실패:`, error.message);
+          results.push({ company: crawler.name, jobs: [], count: 0, error: error.message });
+        }
+      }
+
+      // 2) 브라우저 기반 크롤러: 브라우저 1회 생성 → 공유 → 완료 후 close
+      let browser;
+      try {
+        console.log('🌐 브라우저 인스턴스 시작...');
+        browser = await getBrowser();
+        console.log('🌐 브라우저 준비 완료');
+
+        let index = 0;
+        const crawlers = this.browserCrawlers;
+
+        const workers = Array.from({ length: Math.min(MAX_CONCURRENCY, crawlers.length) }, async () => {
+          while (index < crawlers.length) {
+            const crawler = crawlers[index++];
+            try {
+              const health = await shouldSkipCrawler(prisma, crawler.name);
+              if (health.skip) {
+                console.warn(`⏭️ ${crawler.name} 건너뜀: 연속 실패 쿨다운 (최근 ${health.recentFailures}회)`);
+                results.push({ company: crawler.name, jobs: [], count: 0, skipped: true, reason: health.reason });
+                continue;
+              }
+
+              console.log(`🔍 ${crawler.name} 크롤링 시작...`);
+              const startTime = Date.now();
+              const jobs = await runWithRetry(() => crawler.fn(browser), crawler.name);
+              const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+              console.log(`✅ ${crawler.name}: ${jobs.length}개 채용공고 수집 (${duration}초)`);
+              results.push({ company: crawler.name, jobs, count: jobs.length });
+            } catch (error) {
+              console.error(`❌ ${crawler.name} 크롤링 실패:`, error.message);
+              results.push({ company: crawler.name, jobs: [], count: 0, error: error.message });
+            }
+          }
+        });
+
+        await Promise.all(workers);
+      } finally {
+        if (browser) {
+          await browser.close().catch(() => {});
+          console.log('🌐 브라우저 종료');
+        }
+      }
 
       const totalJobs = results.reduce((sum, result) => sum + result.jobs.length, 0);
-      console.log(`?? ??? ??! ? ${totalJobs}? ???? ??`);
+      console.log(`🎉 크롤링 완료! 총 ${totalJobs}개 채용공고 수집`);
 
       return results;
     } finally {

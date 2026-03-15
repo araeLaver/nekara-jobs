@@ -62,20 +62,6 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'))
   const [totalPages, setTotalPages] = useState(initialTotalPages)
 
-  // Effect for handling filter changes
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-
-    const timer = setTimeout(() => {
-      fetchJobs(1, filters)
-    }, 300) // Debounce filter changes
-
-    return () => clearTimeout(timer)
-  }, [filters, fetchJobs])
-
   // URL 업데이트 함수
   const updateURL = useCallback((newFilters: typeof filters, page: number = 1) => {
     const params = new URLSearchParams()
@@ -106,15 +92,15 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
       })
 
       const response = await fetch(`/api/jobs?${queryParams}`)
-      
+
       if (response.status === 429) {
         throw new Error('요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.')
       }
-      
+
       if (!response.ok) {
         throw new Error('데이터를 불러오는 중 오류가 발생했습니다.')
       }
-      
+
       const data = await response.json()
       setJobs(data.jobs || [])
       setTotalPages(data.pagination?.pages || 1)
@@ -127,6 +113,20 @@ export default function JobSearchContainer({ initialJobs, initialTotalPages, ini
       setLoading(false)
     }
   }, [])
+
+  // Effect for handling filter changes
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+
+    const timer = setTimeout(() => {
+      fetchJobs(1, filters)
+    }, 300) // Debounce filter changes
+
+    return () => clearTimeout(timer)
+  }, [filters, fetchJobs])
 
   const handleFilterChange = useCallback((newFilters: typeof filters) => {
     setCurrentPage(1)

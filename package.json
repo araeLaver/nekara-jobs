@@ -27,7 +27,8 @@
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "data:maintenance": "node scripts/data-maintenance.js",
-    "data:recommend": "node scripts/apply-quality-recommendations.js"
+    "data:recommend": "node scripts/apply-quality-recommendations.js",
+    "postinstall": "node scripts/postinstall.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",
@@ -49,7 +50,8 @@
     "node-cron": "^3.0.0",
     "postcss": "^8.0.0",
     "prisma": "^5.0.0",
-    "puppeteer": "^24.36.1",
+    "puppeteer-core": "^24.0.0",
+    "@sparticuz/chromium-min": "^133.0.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "tailwind-merge": "^3.3.1",
@@ -77,6 +79,8 @@
     "jest-environment-jsdom": "^30.2.0",
     "lint-staged": "^15.0.0",
     "prettier": "^3.0.0",
+    "puppeteer": "^24.0.0",
+    "@sparticuz/chromium": "^133.0.0",
     "ts-node": "^10.9.0"
   },
   "keywords": [
