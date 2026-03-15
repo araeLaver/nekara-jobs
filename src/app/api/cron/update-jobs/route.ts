@@ -8,7 +8,7 @@ export const maxDuration = 60
 export async function GET(request: NextRequest) {
   try {
     // Vercel Cron Job authentication - Fail-closed approach
-    if (!process.env.CRON_SECRET) {
+    if (!process.env.CRON_SECRET?.trim()) {
       return NextResponse.json(
         { error: 'Server configuration error' },
         { status: 500 }
@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
     }
 
     const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      console.log(`Auth mismatch: got="${authHeader}", expected="Bearer ${process.env.CRON_SECRET?.substring(0, 5)}..."`)
+    const cronSecret = process.env.CRON_SECRET?.trim()
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
