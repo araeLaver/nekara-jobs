@@ -16,6 +16,11 @@ const optionalEnvVars = [
 ] as const
 
 export function validateEnv() {
+  // 빌드 타임에는 환경변수 검증을 건너뜀
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return
+  }
+
   const missing: string[] = []
   const warnings: string[] = []
 
