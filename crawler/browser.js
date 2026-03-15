@@ -1,15 +1,11 @@
-const path = require('path');
-
 const IS_VERCEL = !!process.env.VERCEL;
 
 async function getBrowser() {
   if (IS_VERCEL) {
-    const chromium = require('@sparticuz/chromium-min');
+    const chromium = require('@sparticuz/chromium');
     const puppeteer = require('puppeteer-core');
 
-    const executablePath = await chromium.executablePath(
-      `https://github.com/nicholasgasior/chromium-builds/releases/download/v133.0.6891.0/chromium-v133.0.6891.0-pack.tar`
-    );
+    const executablePath = await chromium.executablePath();
 
     return puppeteer.launch({
       args: chromium.args,
