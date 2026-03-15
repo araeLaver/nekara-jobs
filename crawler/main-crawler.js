@@ -3,8 +3,6 @@
 const { PrismaClient } = require('@prisma/client');
 const WorkingCrawlers = require('./working-crawlers');
 const { validateJobBatch, generateQualityReport, getCompanyThresholds } = require('./validators');
-const fs = require('fs'); // Import fs module
-const path = require('path'); // Import path module
 
 const prisma = new PrismaClient();
 
@@ -28,14 +26,11 @@ async function loadCompanyRule(prisma, companyName) {
 }
 
 
-// 로그 파일 경로 설정
-const logFilePath = path.join(__dirname, 'crawler-log.txt');
-
-// 크롤링 결과 로그 기록 함수
+// 크롤링 결과 로그 기록 함수 (Vercel 서버리스 환경에서는 파일 쓰기 불가)
 function logCrawlerResult(status, message, details = {}) {
   const timestamp = new Date().toISOString();
-  const logEntry = `[${timestamp}] [${status.toUpperCase()}] ${message} ${JSON.stringify(details)}\n`;
-  fs.appendFileSync(logFilePath, logEntry, 'utf8');
+  const logEntry = `[${timestamp}] [${status.toUpperCase()}] ${message} ${JSON.stringify(details)}`;
+  console.log(logEntry);
 }
 
 async function saveJobsToDatabase(jobs, companyName) {
